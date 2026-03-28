@@ -1,0 +1,455 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <!-- Install Prompt (only on index page) -->
+    <div id="install-prompt" class="install-prompt glass-card" style="display: none;">
+        <div class="install-content">
+            <i class="fas fa-heart prompt-icon"></i>
+            <div class="install-text">
+                <h3>Install ForeverUs ❤️</h3>
+                <p>Add to home screen for quick access to your private love space</p>
+            </div>
+            <div class="install-buttons">
+                <button id="install-app" class="btn-primary">
+                    <i class="fas fa-download"></i> Install
+                </button>
+                <button id="close-install" class="btn-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="login-container glass-card">
+        <div class="logo-section">
+            <i class="fas fa-heart logo-icon"></i>
+            <h1 class="app-title">ForeverUs</h1>
+            <p class="tagline">A private universe for two hearts</p>
+        </div>
+
+        <form id="login-form" class="login-form">
+            <div class="form-group">
+                <label for="unique-id">
+                    <i class="fas fa-id-card"></i>
+                    Enter Unique ID
+                </label>
+                <input type="text" id="unique-id" name="unique_id" placeholder="FU1234-B" required>
+            </div>
+
+            <div class="user-type-toggle">
+                <span class="toggle-label">I am:</span>
+                <div class="toggle-switch">
+                    <input type="radio" name="user_type" id="boy" value="boy" checked>
+                    <label for="boy" class="toggle-option boy">
+                        <i class="fas fa-mars"></i> Boy
+                    </label>
+                    <input type="radio" name="user_type" id="girl" value="girl">
+                    <label for="girl" class="toggle-option girl">
+                        <i class="fas fa-venus"></i> Girl
+                    </label>
+                    <div class="toggle-slider"></div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary btn-block">
+                <i class="fas fa-heart"></i>
+                Enter Our Space
+            </button>
+        </form>
+
+        <div class="login-footer">
+            <p>Don't have a Couple ID?</p>
+            <a href="/register" class="love-link">
+                <i class="fas fa-heart"></i>
+                Start Your Love Journey
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="floating-hearts">
+    <i class="fas fa-heart"></i>
+    <i class="fas fa-heart"></i>
+    <i class="fas fa-heart"></i>
+</div>
+
+<style>
+/* PWA Install Prompt Styles - Only for index page */
+.install-prompt {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #ff4d6d, #ff8a5c);
+    color: white;
+    border: none;
+    box-shadow: 0 10px 30px rgba(255, 77, 109, 0.3);
+    z-index: 9999;
+    animation: slideUp 0.5s ease;
+}
+
+.install-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.prompt-icon {
+    font-size: 28px;
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+.install-text {
+    flex: 1;
+}
+
+.install-text h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: white;
+}
+
+.install-text p {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    margin: 0;
+    color: white;
+}
+
+.install-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.install-buttons .btn-primary {
+    background: white;
+    color: #ff4d6d;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.install-buttons .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 255, 255, 0.3);
+}
+
+.install-buttons .btn-primary i {
+    margin-right: 5px;
+}
+
+.install-buttons .btn-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.install-buttons .btn-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+    .install-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .install-text {
+        text-align: center;
+    }
+    
+    .install-buttons {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .install-buttons .btn-primary {
+        flex: 1;
+    }
+}
+</style>
+
+<script>
+// PWA Installation Handler - Only for index page
+document.addEventListener('DOMContentLoaded', () => {
+    let deferredPrompt;
+    const installPrompt = document.getElementById('install-prompt');
+    const installButton = document.getElementById('install-app');
+    const closeButton = document.getElementById('close-install');
+    
+    // Check if app is already installed
+    const isAppInstalled = window.matchMedia('(display-mode: standalone)').matches || 
+                          window.navigator.standalone === true;
+    
+    if (isAppInstalled) {
+        console.log('App is already installed');
+        return;
+    }
+    
+    // Check if we've shown the prompt before
+    const hasShownPrompt = localStorage.getItem('pwaPromptShown');
+    
+    // Show prompt after 3 seconds if not installed and not shown before
+    setTimeout(() => {
+        if (!hasShownPrompt && installPrompt) {
+            installPrompt.style.display = 'block';
+        }
+    }, 3000);
+    
+    // Listen for beforeinstallprompt event
+    window.addEventListener('beforeinstallprompt', (e) => {
+        // Prevent the mini-infobar from appearing on mobile
+        e.preventDefault();
+        // Stash the event so it can be triggered later
+        deferredPrompt = e;
+        
+        // Show the install prompt
+        if (installPrompt) {
+            installPrompt.style.display = 'block';
+        }
+    });
+    
+    // Handle install button click
+    if (installButton) {
+        installButton.addEventListener('click', async () => {
+            if (!deferredPrompt) {
+                // If no deferred prompt, show manual instructions
+                showManualInstallInstructions();
+                return;
+            }
+            
+            // Show the install prompt
+            deferredPrompt.prompt();
+            
+            // Wait for the user to respond to the prompt
+            const choiceResult = await deferredPrompt.userChoice;
+            
+            if (choiceResult.outcome === 'accepted') {
+                console.log('User accepted the install prompt');
+                // Hide the prompt
+                if (installPrompt) {
+                    installPrompt.style.display = 'none';
+                }
+                // Mark as shown in localStorage
+                localStorage.setItem('pwaPromptShown', 'true');
+                // Show success message
+                showNotification('App installed successfully! ❤️', 'success');
+            } else {
+                console.log('User dismissed the install prompt');
+                // Hide the prompt
+                if (installPrompt) {
+                    installPrompt.style.display = 'none';
+                }
+                // Mark as shown so we don't bother them again
+                localStorage.setItem('pwaPromptShown', 'true');
+            }
+            
+            // Clear the deferred prompt
+            deferredPrompt = null;
+        });
+    }
+    
+    // Handle close button
+    if (closeButton) {
+        closeButton.addEventListener('click', () => {
+            if (installPrompt) {
+                installPrompt.style.display = 'none';
+                // Mark as shown so we don't show it again
+                localStorage.setItem('pwaPromptShown', 'true');
+            }
+        });
+    }
+    
+    // Show manual install instructions for browsers that don't support beforeinstallprompt
+    function showManualInstallInstructions() {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const isAndroid = /Android/.test(navigator.userAgent);
+        
+        let instructions = '';
+        
+        if (isIOS) {
+            instructions = 'On iOS: Tap the Share button <i class="fas fa-share"></i> then "Add to Home Screen"';
+        } else if (isAndroid) {
+            instructions = 'On Android: Tap the menu <i class="fas fa-ellipsis-vertical"></i> then "Add to Home Screen"';
+        } else {
+            instructions = 'Your browser supports PWA installation. Look for install option in the address bar.';
+        }
+        
+        // Create a custom instruction popup
+        const instructionPopup = document.createElement('div');
+        instructionPopup.className = 'install-prompt glass-card';
+        instructionPopup.innerHTML = `
+            <div class="install-content">
+                <i class="fas fa-info-circle prompt-icon"></i>
+                <div class="install-text">
+                    <h3>Install ForeverUs</h3>
+                    <p>${instructions}</p>
+                </div>
+                <button class="btn-close" onclick="this.parentElement.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+        
+        document.body.appendChild(instructionPopup);
+        
+        // Auto remove after 10 seconds
+        setTimeout(() => {
+            if (instructionPopup.parentNode) {
+                instructionPopup.remove();
+            }
+        }, 10000);
+    }
+    
+    // Show notification function
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        
+        let icon = 'fa-info-circle';
+        if (type === 'success') icon = 'fa-check-circle';
+        
+        notification.innerHTML = `
+            <i class="fas ${icon}"></i>
+            <span>${message}</span>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 10);
+        
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        }, 3000);
+    }
+    
+    // Listen for app installed event
+    window.addEventListener('appinstalled', (evt) => {
+        console.log('App was installed');
+        // Hide the install prompt
+        if (installPrompt) {
+            installPrompt.style.display = 'none';
+        }
+        // Mark as installed in localStorage
+        localStorage.setItem('pwaPromptShown', 'true');
+        // Show success message
+        showNotification('Thank you for installing ForeverUs! 💕', 'success');
+    });
+    
+    // Check if we're in standalone mode (already installed)
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+        console.log('App is running in standalone mode');
+        // Hide the install prompt if it's visible
+        if (installPrompt) {
+            installPrompt.style.display = 'none';
+        }
+    }
+});
+</script>
+
+<style>
+/* Additional notification styles for PWA messages */
+.notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: white;
+    color: #333;
+    padding: 12px 20px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 10000;
+    transform: translateX(120%);
+    transition: transform 0.3s ease;
+    max-width: 350px;
+}
+
+.notification.show {
+    transform: translateX(0);
+}
+
+.notification.success {
+    background: linear-gradient(135deg, #4ade80, #22c55e);
+    color: white;
+}
+
+.notification.info {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+}
+
+.notification i {
+    font-size: 1.2rem;
+}
+
+.notification span {
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .notification {
+        left: 20px;
+        right: 20px;
+        max-width: none;
+        transform: translateY(120%);
+    }
+    
+    .notification.show {
+        transform: translateY(0);
+    }
+}
+</style>
+{% endblock %}

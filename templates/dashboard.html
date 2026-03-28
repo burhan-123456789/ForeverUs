@@ -1,0 +1,1836 @@
+{% extends "base.html" %} {% block content %}
+<div class="chat-app-container">
+
+  <!-- In dashboard.html, update the admin badge URL -->
+{% if session.get('is_admin_user') %}
+<div class="admin-badge" style="position: fixed; top: 10px; right: 10px; z-index: 1000;">
+  <div class="glass-card" style="padding: 8px 15px; display: flex; align-items: center; gap: 10px; background: linear-gradient(135deg, var(--primary), var(--gradient-end));">
+    <i class="fas fa-shield-alt" style="color: white;"></i>
+    <span style="color: white; font-weight: 600;">Admin Mode</span>
+    <a href="{{ url_for('admin_panel.dashboard') }}" class="btn-secondary btn-sm" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px 12px;">
+      <i class="fas fa-chart-line"></i> Admin Panel
+    </a>
+  </div>
+</div>
+{% endif %}
+  
+  <!-- Animated Hamburger Menu Button (only visible on mobile) -->
+  <button class="menu-toggle" id="menu-toggle" aria-label="Toggle menu">
+    <span class="hamburger-icon">
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+    </span>
+    <span class="close-icon">
+      <i class="fas fa-times"></i>
+    </span>
+  </button>
+
+  <!-- Sidebar Menu with Chat Sessions -->
+  <aside class="chat-sidebar" id="chat-sidebar">
+    <div class="sidebar-header">
+      <div class="user-info">
+        <div class="user-avatar">
+          {% if user_type == 'boy' %}
+          <i class="fas fa-male"></i>
+          {% else %}
+          <i class="fas fa-female"></i>
+          {% endif %}
+        </div>
+        <div class="user-details">
+          <h3>
+            {% if user_type == 'boy' %}{{ couple.boy_name }}{% else %}{{
+            couple.girl_name }}{% endif %}
+          </h3>
+          <p class="partner-name">
+            with ❤️ {{ couple.boy_name if user_type == 'girl' else
+            couple.girl_name }}
+          </p>
+        </div>
+      </div>
+
+      <div class="anniversary-badge">
+        <i class="fas fa-calendar-heart"></i>
+        <span>{{ days_until }} days until anniversary</span>
+      </div>
+    </div>
+
+    <div class="sidebar-search">
+      <i class="fas fa-search"></i>
+      <input
+        type="text"
+        id="history-search"
+        placeholder="Search conversations..."
+        class="glass-input"
+      />
+    </div>
+
+    <div class="sidebar-actions">
+      <button
+        class="sidebar-action-btn"
+        id="new-session-btn"
+        title="Start new conversation"
+      >
+        <i class="fas fa-plus-circle"></i>
+        <span>New Chat</span>
+      </button>
+      <!-- In the sidebar-actions section, update the AI Chat button -->
+      <button
+        class="sidebar-action-btn"
+        id="ai-chat-btn"
+        onclick="window.location.href = '/chat'"
+        title="Couple Chat"
+      >
+        <i class="fas fa-comments"></i>
+        <span>Couple Chat</span>
+      </button>
+      <button
+        class="sidebar-action-btn"
+        id="clear-all-sessions"
+        title="Clear all conversations"
+      >
+        <i class="fas fa-trash-alt"></i>
+        <span>Clear All</span>
+      </button>
+      <button
+        class="sidebar-action-btn"
+        onclick="window.location.href = '/api/logout'"
+        title="Logout"
+      >
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Logout</span>
+      </button>
+    </div>
+
+    <div class="chat-history-container" id="chat-history-container">
+      <div class="history-header">
+        <i class="fas fa-history"></i>
+        <h4>Conversations</h4>
+      </div>
+
+      <div class="history-list" id="history-list">
+        <!-- Sessions will be loaded here dynamically -->
+        <div class="loading-history">
+          <i class="fas fa-spinner fa-spin"></i>
+          <p>Loading conversations...</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Chat Area -->
+  <main class="chat-main" id="chat-main">
+    <!-- Chat Header -->
+    <div class="chat-header">
+      <div class="chat-header-info">
+        <h2>💬 ForeverUs Messages</h2>
+        <p class="chat-subtitle" id="current-session-title">
+          Start a new conversation
+        </p>
+      </div>
+      <div class="chat-header-actions">
+        <button
+          class="icon-btn"
+          id="refresh-sessions"
+          title="Refresh conversations"
+        >
+          <i class="fas fa-sync-alt"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Messages Container -->
+    <div class="messages-container" id="messages-container">
+      <!-- Welcome Message -->
+      <div class="message welcome-message">
+        <div class="message-avatar">
+          <i class="fas fa-heart"></i>
+        </div>
+        <div class="message-bubble">
+          <p>Welcome to your private message space! 💕</p>
+          <p>
+            Choose a message type below or type a custom request to generate a
+            romantic message for your partner.
+          </p>
+          <small>{{ couple.boy_name }} ❤️ {{ couple.girl_name }}</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Message Input Area -->
+    <div class="message-input-area">
+      <!-- Quick Message Types -->
+      <div class="quick-types-container">
+        <button class="quick-type-btn" data-type="romantic" title="Romantic">
+          <i class="fas fa-heart"></i>
+          <span>Romantic</span>
+        </button>
+        <button
+          class="quick-type-btn"
+          data-type="good_morning"
+          title="Good Morning"
+        >
+          <i class="fas fa-sun"></i>
+          <span>Morning</span>
+        </button>
+        <button
+          class="quick-type-btn"
+          data-type="good_night"
+          title="Good Night"
+        >
+          <i class="fas fa-moon"></i>
+          <span>Night</span>
+        </button>
+        <button class="quick-type-btn" data-type="missing" title="Miss You">
+          <i class="fas fa-heart-broken"></i>
+          <span>Miss You</span>
+        </button>
+        <button class="quick-type-btn" data-type="funny" title="Funny">
+          <i class="fas fa-laugh"></i>
+          <span>Funny</span>
+        </button>
+        <button
+          class="quick-type-btn"
+          data-type="appreciation"
+          title="Appreciation"
+        >
+          <i class="fas fa-star"></i>
+          <span>Thanks</span>
+        </button>
+        <button class="quick-type-btn" data-type="sorry" title="Sorry">
+          <i class="fas fa-frown"></i>
+          <span>Sorry</span>
+        </button>
+        <button
+          class="quick-type-btn"
+          data-type="anniversary"
+          title="Anniversary"
+        >
+          <i class="fas fa-calendar-check"></i>
+          <span>Anniversary</span>
+        </button>
+      </div>
+
+      <!-- Custom Input Field -->
+      <div class="input-wrapper">
+        <div class="custom-input-container">
+          <input
+            type="text"
+            id="custom-message-input"
+            class="glass-input"
+            placeholder="Type your own message request... (e.g., 'Write a poem about our love')"
+            autocomplete="off"
+          />
+          <button class="send-btn" id="send-custom-message" title="Send">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+
+        <div class="message-actions-bar">
+          <button
+            class="action-btn"
+            id="copy-message"
+            title="Copy to clipboard"
+          >
+            <i class="fas fa-copy"></i>
+            <span>Copy</span>
+          </button>
+          <button
+            class="action-btn"
+            id="share-whatsapp"
+            title="Share on WhatsApp"
+          >
+            <i class="fab fa-whatsapp"></i>
+            <span>WhatsApp</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Context Menu for Chat Sessions -->
+<div class="context-menu" id="chat-context-menu">
+  <div class="context-menu-item" id="delete-session-option">
+    <i class="fas fa-trash-alt"></i>
+    <span>Delete Conversation</span>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal" id="delete-modal">
+  <div class="modal-content glass-card">
+    <i class="fas fa-exclamation-triangle modal-icon"></i>
+    <h3>Delete Conversation?</h3>
+    <p>
+      This will delete all messages in this conversation. This action cannot be
+      undone.
+    </p>
+    <div class="modal-buttons">
+      <button class="btn-secondary" id="cancel-delete">Cancel</button>
+      <button class="btn-primary" id="confirm-delete">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Clear All Confirmation Modal -->
+<div class="modal" id="clear-all-modal">
+  <div class="modal-content glass-card">
+    <i class="fas fa-exclamation-triangle modal-icon"></i>
+    <h3>Clear All Conversations?</h3>
+    <p>This will delete all your conversations permanently.</p>
+    <div class="modal-buttons">
+      <button class="btn-secondary" id="cancel-clear-all">Cancel</button>
+      <button class="btn-primary" id="confirm-clear-all">Clear All</button>
+    </div>
+  </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay" class="loading-overlay">
+  <div class="loading-content">
+    <i class="fas fa-heart beating-heart"></i>
+    <p>Generating your message...</p>
+  </div>
+</div>
+
+<style>
+  /* Chat Sessions Styles */
+  .history-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    margin: 5px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .history-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(5px);
+    border-color: var(--primary);
+  }
+
+  .history-item.active {
+    background: linear-gradient(135deg, var(--primary), var(--gradient-end));
+    border-color: transparent;
+  }
+
+  .history-item-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    font-size: 1.2rem;
+  }
+
+  .history-item.active .history-item-icon {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .history-item-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .history-item-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .history-item-preview {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .history-item-time {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    opacity: 0.8;
+  }
+
+  .history-item.active .history-item-title,
+  .history-item.active .history-item-preview,
+  .history-item.active .history-item-time {
+    color: white;
+  }
+
+  /* Message Time */
+  .message-time {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    margin-top: 5px;
+    text-align: right;
+    opacity: 0.7;
+  }
+
+  /* Message Styles */
+  .message {
+    display: flex;
+    margin: 20px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .message.user-message {
+    justify-content: flex-end;
+  }
+
+  .message.partner-message {
+    justify-content: flex-start;
+  }
+
+  .message.user-message .message-bubble {
+    background: linear-gradient(135deg, var(--primary), var(--gradient-end));
+    color: white;
+    border-bottom-right-radius: 4px;
+  }
+
+  .message.partner-message .message-bubble {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-bottom-left-radius: 4px;
+  }
+
+  .message.user-message .message-avatar {
+    order: 2;
+    margin-left: 12px;
+    margin-right: 0;
+  }
+
+  .message.partner-message .message-avatar {
+    order: 1;
+    margin-right: 12px;
+    margin-left: 0;
+  }
+
+  .message.user-message .message-bubble {
+    order: 1;
+  }
+
+  .message.partner-message .message-bubble {
+    order: 2;
+  }
+
+  .message-avatar {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+
+  .message-bubble {
+    max-width: 70%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    position: relative;
+    word-wrap: break-word;
+  }
+
+  .message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+    font-size: 0.85rem;
+    opacity: 0.8;
+  }
+
+  .message-sender {
+    font-weight: 600;
+  }
+
+  .message-type {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+  }
+
+  .message-content {
+    line-height: 1.5;
+    font-size: 0.95rem;
+  }
+
+  .welcome-message {
+    justify-content: center;
+    opacity: 0.8;
+  }
+
+  .welcome-message .message-bubble {
+    background: rgba(255, 255, 255, 0.05);
+    text-align: center;
+    max-width: 400px;
+  }
+
+  /* Date Separator */
+  .date-separator {
+    text-align: center;
+    margin: 20px 0;
+    position: relative;
+  }
+
+  .date-separator::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+    background: var(--glass-border);
+    z-index: 1;
+  }
+
+  .date-separator span {
+    background: var(--bg-primary);
+    padding: 0 15px;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    position: relative;
+    z-index: 2;
+    backdrop-filter: blur(5px);
+  }
+
+  .ai-message .message-time {
+    margin-top: 5px;
+  }
+
+  .ai-message .message-bubble {
+    transition: transform 0.2s ease;
+  }
+
+  .ai-message .message-bubble:hover {
+    transform: scale(1.02);
+  }
+
+  /* Loading Messages */
+  .loading-messages {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-secondary);
+  }
+
+  .loading-messages i {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    color: var(--primary);
+  }
+
+  /* Sidebar Actions */
+  .sidebar-actions {
+    display: flex;
+    gap: 10px;
+    padding: 15px;
+    border-bottom: 1px solid var(--glass-border);
+    flex-wrap: wrap;
+  }
+
+  .sidebar-action-btn {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    min-width: 80px;
+  }
+
+  .sidebar-action-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--primary);
+    transform: translateY(-2px);
+  }
+
+  .sidebar-action-btn i {
+    font-size: 1rem;
+  }
+
+  #new-session-btn {
+    background: linear-gradient(135deg, var(--primary), var(--gradient-end));
+    border-color: transparent;
+  }
+
+  #new-session-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 77, 109, 0.3);
+  }
+
+  #ai-chat-btn {
+    background: linear-gradient(135deg, #6c5ce7, #a363d9);
+    border-color: transparent;
+  }
+
+  #ai-chat-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3);
+  }
+
+  /* Chat Header */
+  .chat-subtitle {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-top: 5px;
+  }
+
+  /* Notification styles */
+  .notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    background: linear-gradient(135deg, var(--primary), var(--gradient-end));
+    color: white;
+    border-radius: 50px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transform: translateX(120%);
+    transition: transform 0.3s ease;
+    z-index: 10000;
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+  }
+
+  .notification.show {
+    transform: translateX(0);
+  }
+
+  .notification.error {
+    background: linear-gradient(135deg, #ff4757, #ff6b81);
+  }
+
+  .notification.success {
+    background: linear-gradient(135deg, #00b894, #00cec9);
+  }
+
+  .notification i {
+    font-size: 1.2rem;
+  }
+
+  /* Enhanced Hamburger Menu with Close Icon */
+  .menu-toggle {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 50px;
+    height: 50px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 1001;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow);
+    -webkit-tap-highlight-color: transparent;
+    overflow: hidden;
+  }
+
+  @media (max-width: 768px) {
+    .menu-toggle {
+      display: flex;
+      top: 15px;
+      left: 15px;
+      width: 45px;
+      height: 45px;
+    }
+  }
+
+  .menu-toggle:active {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(0.95);
+  }
+
+  /* Icon containers */
+  .hamburger-icon,
+  .close-icon {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition:
+      transform 0.3s ease,
+      opacity 0.3s ease;
+  }
+
+  .hamburger-icon {
+    transform: rotate(0) scale(1);
+    opacity: 1;
+  }
+
+  .close-icon {
+    transform: rotate(90deg) scale(0);
+    opacity: 0;
+    font-size: 24px;
+    color: white;
+  }
+
+  .close-icon i {
+    font-size: 24px;
+    color: white;
+  }
+
+  /* Active state (menu open) */
+  .menu-toggle.active .hamburger-icon {
+    transform: rotate(-90deg) scale(0);
+    opacity: 0;
+  }
+
+  .menu-toggle.active .close-icon {
+    transform: rotate(0) scale(1);
+    opacity: 1;
+  }
+
+  /* Hamburger lines */
+  .hamburger-line {
+    width: 30px;
+    height: 3px;
+    background: white;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+    margin: 3px 0;
+  }
+
+  /* Chat Sidebar - Desktop visible by default */
+  .chat-sidebar {
+    width: 350px;
+    max-width: 100%;
+    height: 100vh;
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-right: 1px solid var(--glass-border);
+    position: relative;
+    left: 0;
+    top: 0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: translateX(0);
+    transition: transform 0.25s ease;
+  }
+
+  /* Hide sidebar on mobile by default */
+  @media (max-width: 768px) {
+    .chat-sidebar {
+      position: fixed;
+      transform: translateX(-100%);
+      box-shadow: 2px 0 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .chat-sidebar.open {
+      transform: translateX(0);
+    }
+  }
+
+  /* Main Content Adjustment - Desktop */
+  .chat-main {
+    flex: 1;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: width 0.25s ease;
+    width: calc(100% - 350px);
+  }
+
+  /* On mobile, main takes full width */
+  @media (max-width: 768px) {
+    .chat-main {
+      width: 100%;
+    }
+
+    .chat-main.sidebar-open {
+      width: 100%;
+    }
+  }
+
+  /* Adjust chat header for mobile */
+  @media (max-width: 768px) {
+    .chat-header {
+      padding: 15px 20px 15px 70px;
+    }
+  }
+
+  /* Body menu open state for mobile */
+  @media (max-width: 768px) {
+    body.menu-open {
+      overflow: hidden;
+    }
+
+    body.menu-open::after {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(5px);
+      z-index: 999;
+      animation: fadeIn 0.3s ease;
+      pointer-events: none;
+    }
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Mobile optimization for menu toggle active state */
+  @media (max-width: 768px) {
+    .menu-toggle.active {
+      background: linear-gradient(135deg, var(--primary), var(--gradient-end));
+      animation: menuPulse 2s infinite;
+    }
+  }
+
+  @keyframes menuPulse {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 rgba(255, 77, 109, 0.7);
+    }
+    50% {
+      box-shadow: 0 0 0 10px rgba(255, 77, 109, 0);
+    }
+  }
+</style>
+
+<!-- Replace the entire <script> section at the bottom of dashboard.html with this: -->
+
+<script>
+  // Safe JSON parsing with error handling
+  let couple = {};
+  try {
+      couple = {{ couple|tojson }};
+  } catch (e) {
+      console.error('Error parsing couple data:', e);
+      couple = {
+          boy_name: 'Boy',
+          girl_name: 'Girl'
+      };
+  }
+
+  const userType = "{{ user_type }}";
+  let currentSessionId = null;
+  let currentMessage = '';
+  let currentChatId = null;
+  let selectedSessionId = null;
+
+  // Hamburger Menu Toggle with Close Icon
+  const menuToggle = document.getElementById('menu-toggle');
+  const sidebar = document.getElementById('chat-sidebar');
+  const main = document.getElementById('chat-main');
+  const body = document.body;
+
+  // Check if we're on mobile
+  function isMobile() {
+      return window.innerWidth <= 768;
+  }
+
+  // Function to close sidebar menu (only on mobile)
+  function closeSidebarMenu() {
+      if (isMobile()) {
+          menuToggle.classList.remove('active');
+          sidebar.classList.remove('open');
+          main.classList.remove('sidebar-open');
+          body.classList.remove('menu-open');
+          body.style.overflow = '';
+      }
+  }
+
+  // Function to open sidebar menu (only on mobile)
+  function openSidebarMenu() {
+      if (isMobile()) {
+          menuToggle.classList.add('active');
+          sidebar.classList.add('open');
+          main.classList.add('sidebar-open');
+          body.classList.add('menu-open');
+          body.style.overflow = 'hidden';
+      }
+  }
+
+  // Toggle menu function (only works on mobile)
+  function toggleSidebarMenu() {
+      if (isMobile()) {
+          if (sidebar.classList.contains('open')) {
+              closeSidebarMenu();
+          } else {
+              openSidebarMenu();
+          }
+      }
+  }
+
+  if (menuToggle) {
+      menuToggle.removeEventListener('click', toggleSidebarMenu);
+      menuToggle.addEventListener('click', toggleSidebarMenu);
+
+      menuToggle.addEventListener('touchstart', (e) => {
+          if (isMobile()) {
+              e.preventDefault();
+              toggleSidebarMenu();
+          }
+      }, { passive: false });
+  }
+
+  // Close sidebar when clicking outside on mobile
+  document.addEventListener('click', (e) => {
+      if (isMobile()) {
+          const isClickInsideSidebar = sidebar.contains(e.target);
+          const isClickOnMenuToggle = menuToggle.contains(e.target);
+
+          if (!isClickInsideSidebar && !isClickOnMenuToggle && sidebar.classList.contains('open')) {
+              closeSidebarMenu();
+          }
+      }
+  });
+
+  // Close sidebar on escape key (only on mobile)
+  document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && isMobile() && sidebar.classList.contains('open')) {
+          closeSidebarMenu();
+      }
+  });
+
+  // Handle window resize
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+          if (!isMobile()) {
+              sidebar.classList.remove('open');
+              main.classList.remove('sidebar-open');
+              body.classList.remove('menu-open');
+              body.style.overflow = '';
+
+              if (menuToggle) {
+                  menuToggle.classList.remove('active');
+              }
+          } else {
+              closeSidebarMenu();
+          }
+      }, 250);
+  });
+
+  // Prevent body scroll when menu is open on mobile
+  if (isMobile()) {
+      body.addEventListener('touchmove', (e) => {
+          if (sidebar.classList.contains('open') && !e.target.closest('.chat-sidebar')) {
+              e.preventDefault();
+          }
+      }, { passive: false });
+  }
+
+  // Load chat sessions
+  async function loadChatSessions() {
+      const historyList = document.getElementById('history-list');
+      if (!historyList) return;
+
+      historyList.innerHTML = '<div class="loading-history"><i class="fas fa-spinner fa-spin"></i><p>Loading conversations...</p></div>';
+
+      try {
+          const response = await fetch('/api/chat-sessions');
+          const data = await response.json();
+
+          if (data.success) {
+              renderChatSessions(data.sessions, data.current_user);
+          } else {
+              historyList.innerHTML = '<div class="history-empty"><i class="fas fa-heart-broken"></i><p>Failed to load conversations</p></div>';
+          }
+      } catch (error) {
+          console.error('Error loading sessions:', error);
+          historyList.innerHTML = '<div class="history-empty"><i class="fas fa-heart-broken"></i><p>Error loading conversations</p><small>Please try again</small></div>';
+      }
+  }
+
+  // Render chat sessions
+  function renderChatSessions(sessions, currentUser) {
+      const historyList = document.getElementById('history-list');
+      if (!historyList) return;
+
+      if (!sessions || sessions.length === 0) {
+          historyList.innerHTML = '<div class="history-empty"><i class="fas fa-heart"></i><p>No conversations yet</p><small>Start your first conversation!</small></div>';
+          return;
+      }
+
+      let html = '';
+
+      sessions.forEach(session => {
+          const isActive = currentSessionId == session.id ? 'active' : '';
+
+          // Determine icon based on who sent the last message
+          let emoji = '💬';
+          if (session.last_message_sender === currentUser) {
+              emoji = '📤'; // You sent
+          } else if (session.last_message_sender) {
+              emoji = '📥'; // Partner sent
+          }
+
+          // Create preview with sender indicator
+          let previewText = session.preview;
+          if (session.last_message_sender === 'boy') {
+              previewText = '👦 ' + previewText;
+          } else if (session.last_message_sender === 'girl') {
+              previewText = '👧 ' + previewText;
+          }
+
+          html += `<div class="history-item ${isActive}" data-session-id="${session.id}" data-session-uuid="${session.session_uuid}">`;
+          html += `<div class="history-item-icon">${emoji}</div>`;
+          html += `<div class="history-item-content">`;
+          html += `<div class="history-item-title">${session.title}</div>`;
+          html += `<div class="history-item-preview">${previewText}</div>`;
+          html += `<div class="history-item-time">${session.formatted_date} • You: ${session.user_message_count} | Partner: ${session.partner_message_count}</div>`;
+          html += `</div>`;
+          html += `</div>`;
+      });
+
+      historyList.innerHTML = html;
+
+      // Add click event to session items
+      document.querySelectorAll('.history-item').forEach(item => {
+          item.addEventListener('click', () => {
+              const sessionId = item.dataset.sessionId;
+              loadSessionMessages(sessionId);
+
+              // Update active state
+              document.querySelectorAll('.history-item').forEach(i => i.classList.remove('active'));
+              item.classList.add('active');
+
+              if (isMobile()) {
+                  closeSidebarMenu();
+              }
+          });
+
+          // Add right-click/long press for delete
+          let pressTimer;
+          let longPressTriggered = false;
+
+          item.addEventListener('mousedown', (e) => {
+              if (e.button === 2) return;
+              longPressTriggered = false;
+              pressTimer = setTimeout(() => {
+                  longPressTriggered = true;
+                  showContextMenu(e, item.dataset.sessionId);
+              }, 500);
+          });
+
+          item.addEventListener('mouseup', (e) => {
+              clearTimeout(pressTimer);
+              if (longPressTriggered) {
+                  e.stopPropagation();
+              }
+          });
+
+          item.addEventListener('mouseleave', () => clearTimeout(pressTimer));
+
+          item.addEventListener('contextmenu', (e) => {
+              e.preventDefault();
+              clearTimeout(pressTimer);
+              showContextMenu(e, item.dataset.sessionId);
+          });
+
+          // Touch events for mobile
+          item.addEventListener('touchstart', (e) => {
+              longPressTriggered = false;
+              pressTimer = setTimeout(() => {
+                  longPressTriggered = true;
+                  e.preventDefault();
+                  showContextMenu(e, item.dataset.sessionId);
+              }, 500);
+          }, { passive: false });
+
+          item.addEventListener('touchend', (e) => {
+              clearTimeout(pressTimer);
+              if (longPressTriggered) {
+                  e.preventDefault();
+              }
+          });
+
+          item.addEventListener('touchcancel', () => clearTimeout(pressTimer));
+          item.addEventListener('touchmove', () => clearTimeout(pressTimer));
+      });
+  }
+
+  // Load session messages - FIXED to show only AI messages
+  async function loadSessionMessages(sessionId) {
+      const messagesContainer = document.getElementById('messages-container');
+      const sessionTitle = document.getElementById('current-session-title');
+      if (!messagesContainer) return;
+
+      messagesContainer.innerHTML = '<div class="loading-messages"><i class="fas fa-spinner fa-spin"></i><p>Loading conversation...</p></div>';
+
+      try {
+          const response = await fetch(`/api/chat-sessions/${sessionId}/messages`);
+          const data = await response.json();
+
+          if (data.success) {
+              currentSessionId = sessionId;
+              if (sessionTitle) {
+                  sessionTitle.textContent = data.session.title;
+              }
+              renderMessages(data.messages, data.current_user, data.couple);
+          } else {
+              messagesContainer.innerHTML = '<div class="message welcome-message"><div class="message-bubble"><p>Failed to load messages</p></div></div>';
+          }
+      } catch (error) {
+          console.error('Error loading messages:', error);
+          messagesContainer.innerHTML = '<div class="message welcome-message"><div class="message-bubble"><p>Error loading messages</p></div></div>';
+      }
+  }
+
+  // Render messages - FIXED VERSION with proper filtering
+  function renderMessages(messages, currentUser, coupleData) {
+      const messagesContainer = document.getElementById('messages-container');
+      if (!messagesContainer) return;
+
+      // Filter out any 'chat' type messages that might have slipped through
+      const filteredMessages = messages.filter(msg => msg.message_type !== 'chat');
+
+      if (!filteredMessages || filteredMessages.length === 0) {
+          messagesContainer.innerHTML = `
+              <div class="message welcome-message">
+                  <div class="message-avatar">
+                      <i class="fas fa-heart"></i>
+                  </div>
+                  <div class="message-bubble">
+                      <p>Start a new AI conversation! 💕</p>
+                      <p>Choose a message type below or type your own request to generate a romantic message.</p>
+                      <small>${coupleData.boy_name} ❤️ ${coupleData.girl_name}</small>
+                  </div>
+              </div>
+          `;
+          return;
+      }
+
+      let html = '';
+      let lastDate = '';
+
+      filteredMessages.forEach(msg => {
+          // Add date separator if date changes
+          const msgDate = new Date(msg.created_at).toLocaleDateString();
+          if (msgDate !== lastDate) {
+              lastDate = msgDate;
+              html += `<div class="date-separator"><span>${msgDate}</span></div>`;
+          }
+
+          const emojiMap = {
+              'romantic': '❤️',
+              'funny': '😂',
+              'missing': '🥺',
+              'good_morning': '☀️',
+              'good_night': '🌙',
+              'appreciation': '🙏',
+              'anniversary': '🎉',
+              'sorry': '😔',
+              'custom': '💭'
+          };
+
+          const emoji = emojiMap[msg.message_type] || '💬';
+          const typeDisplay = msg.message_type.replace('_', ' ').toUpperCase();
+
+          // FIX: Determine message class and sender label based on sender_type vs currentUser
+          const isFromCurrentUser = msg.sender_type === currentUser;
+          const messageClass = isFromCurrentUser ? 'message user-message' : 'message partner-message';
+
+          // FIX: Set sender label correctly
+          let senderLabel;
+          if (isFromCurrentUser) {
+              senderLabel = 'You';
+          } else {
+              // Show partner's name
+              senderLabel = msg.sender_type === 'boy' ? coupleData.boy_name : coupleData.girl_name;
+          }
+
+          // FIX: Set avatar icon based on sender
+          const avatarIcon = msg.sender_type === 'boy' ? 'fa-male' : 'fa-female';
+
+          html += `
+              <div class="${messageClass}" data-chat-id="${msg.id}">
+                  <div class="message-avatar">
+                      <i class="fas ${avatarIcon}"></i>
+                  </div>
+                  <div class="message-bubble">
+                      <div class="message-header">
+                          <span class="message-sender">${senderLabel}</span>
+                          <span class="message-type">${emoji} ${typeDisplay}</span>
+                      </div>
+                      <div class="message-content">${msg.message.replace(/\n/g, '<br>')}</div>
+                      <div class="message-time">${msg.formatted_time}</div>
+                  </div>
+              </div>
+          `;
+      });
+
+      messagesContainer.innerHTML = html;
+
+      // Set the last message as current for copy/share
+      if (filteredMessages.length > 0) {
+          const lastMsg = filteredMessages[filteredMessages.length - 1];
+          currentMessage = lastMsg.message;
+          currentChatId = lastMsg.id;
+
+          const lastMessageElement = messagesContainer.querySelector('.message:last-child .message-content');
+          if (lastMessageElement) {
+              lastMessageElement.id = 'ai-response';
+          }
+      }
+
+      messagesContainer.scrollTo({
+          top: messagesContainer.scrollHeight,
+          behavior: 'smooth'
+      });
+  }
+
+  // Generate AI message
+  async function generateMessage(messageType, customPrompt = null) {
+      const loadingOverlay = document.getElementById('loading-overlay');
+      const messagesContainer = document.getElementById('messages-container');
+      const customInput = document.getElementById('custom-message-input');
+      const sessionTitle = document.getElementById('current-session-title');
+
+      if (!loadingOverlay || !messagesContainer) return;
+
+      if (messageType === 'custom' && (!customPrompt || customPrompt.trim() === '')) {
+          showNotification('Please enter a message request', 'error');
+          if (customInput) customInput.focus();
+          return;
+      }
+
+      loadingOverlay.style.display = 'flex';
+
+      try {
+          const requestData = {
+              message_type: customPrompt ? 'custom' : messageType
+          };
+
+          if (customPrompt) {
+              requestData.custom_prompt = customPrompt;
+          }
+
+          if (currentSessionId) {
+              requestData.session_id = currentSessionId;
+          }
+
+          const response = await fetch('/api/generate-message', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(requestData)
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+              currentSessionId = data.session_id;
+              currentMessage = data.message;
+              currentChatId = data.chat_id;
+
+              if (sessionTitle && (!sessionTitle.textContent || sessionTitle.textContent === 'Start a new conversation')) {
+                  // Refresh sessions to get updated title
+                  await loadChatSessions();
+              }
+
+              const emojiMap = {
+                  'romantic': '❤️',
+                  'funny': '😂',
+                  'missing': '🥺',
+                  'good_morning': '☀️',
+                  'good_night': '🌙',
+                  'appreciation': '🙏',
+                  'anniversary': '🎉',
+                  'sorry': '😔',
+                  'custom': '💭'
+              };
+
+              const emoji = emojiMap[messageType] || '💬';
+              const typeDisplay = (customPrompt ? 'Custom' : messageType).replace('_', ' ').toUpperCase();
+              const now = new Date();
+              const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+              // FIX: For newly generated messages, they are always from current user
+              const avatarIcon = userType === 'boy' ? 'fa-male' : 'fa-female';
+
+              const messageHtml = `
+                  <div class="message user-message" data-chat-id="${data.chat_id}">
+                      <div class="message-avatar">
+                          <i class="fas ${avatarIcon}"></i>
+                      </div>
+                      <div class="message-bubble">
+                          <div class="message-header">
+                              <span class="message-sender">You</span>
+                              <span class="message-type">${emoji} ${typeDisplay}</span>
+                          </div>
+                          <div class="message-content" id="ai-response">${data.message.replace(/\n/g, '<br>')}</div>
+                          <div class="message-time">${timeStr}</div>
+                      </div>
+                  </div>
+              `;
+
+              // Check if we need to add a date separator
+              const today = new Date().toLocaleDateString();
+              const lastDateSeparator = messagesContainer.querySelector('.date-separator:last-child span');
+              if (!lastDateSeparator || lastDateSeparator.textContent !== today) {
+                  messagesContainer.insertAdjacentHTML('beforeend', `<div class="date-separator"><span>${today}</span></div>`);
+              }
+
+              const welcomeMessage = messagesContainer.querySelector('.welcome-message');
+              if (welcomeMessage) {
+                  welcomeMessage.remove();
+              }
+
+              const loadingMessages = messagesContainer.querySelector('.loading-messages');
+              if (loadingMessages) {
+                  loadingMessages.remove();
+              }
+
+              messagesContainer.insertAdjacentHTML('beforeend', messageHtml);
+
+              const aiResponses = document.querySelectorAll('.message-content');
+              if (aiResponses.length > 0) {
+                  aiResponses.forEach(el => el.id = '');
+                  aiResponses[aiResponses.length - 1].id = 'ai-response';
+              }
+
+              messagesContainer.scrollTo({
+                  top: messagesContainer.scrollHeight,
+                  behavior: 'smooth'
+              });
+
+              await loadChatSessions();
+
+              if (isMobile()) {
+                  closeSidebarMenu();
+              }
+
+              showNotification('Message generated successfully!', 'success');
+          } else {
+              showNotification(data.message || 'Failed to generate message', 'error');
+          }
+      } catch (error) {
+          console.error('Error:', error);
+          showNotification('An error occurred. Please try again.', 'error');
+      } finally {
+          loadingOverlay.style.display = 'none';
+      }
+  }
+
+  // Create new session
+  async function createNewSession() {
+      try {
+          const response = await fetch('/api/chat-sessions', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ title: 'New Conversation' })
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+              currentSessionId = data.session.id;
+
+              document.getElementById('messages-container').innerHTML = `
+                  <div class="message welcome-message">
+                      <div class="message-avatar">
+                          <i class="fas fa-heart"></i>
+                      </div>
+                      <div class="message-bubble">
+                          <p>Start a new AI conversation! 💕</p>
+                          <p>Choose a message type below or type your own request to generate a romantic message.</p>
+                          <small>${couple.boy_name} ❤️ ${couple.girl_name}</small>
+                      </div>
+                  </div>
+              `;
+
+              document.getElementById('current-session-title').textContent = 'New Conversation';
+              currentMessage = '';
+              currentChatId = null;
+
+              await loadChatSessions();
+
+              const customInput = document.getElementById('custom-message-input');
+              if (customInput) customInput.focus();
+
+              showNotification('New conversation started!', 'success');
+
+              if (isMobile()) {
+                  closeSidebarMenu();
+              }
+          }
+      } catch (error) {
+          console.error('Error creating session:', error);
+          showNotification('Failed to create new conversation', 'error');
+      }
+  }
+
+  // Show context menu for delete
+  function showContextMenu(e, sessionId) {
+      e.preventDefault();
+
+      const contextMenu = document.getElementById('chat-context-menu');
+      if (!contextMenu) return;
+
+      selectedSessionId = sessionId;
+
+      let x = e.pageX || (e.touches ? e.touches[0].pageX : 0);
+      let y = e.pageY || (e.touches ? e.touches[0].pageY : 0);
+
+      const menuWidth = 200;
+      const menuHeight = 50;
+      const windowWidth = window.innerWidth;
+      const windowHeight = window.innerHeight;
+
+      if (x + menuWidth > windowWidth) {
+          x = windowWidth - menuWidth - 10;
+      }
+
+      if (y + menuHeight > windowHeight) {
+          y = windowHeight - menuHeight - 10;
+      }
+
+      contextMenu.style.top = `${y}px`;
+      contextMenu.style.left = `${x}px`;
+      contextMenu.style.display = 'block';
+
+      setTimeout(() => {
+          document.addEventListener('click', function hideMenu(e) {
+              if (!contextMenu.contains(e.target)) {
+                  contextMenu.style.display = 'none';
+                  document.removeEventListener('click', hideMenu);
+              }
+          });
+
+          document.addEventListener('scroll', function hideMenuOnScroll() {
+              contextMenu.style.display = 'none';
+              document.removeEventListener('scroll', hideMenuOnScroll);
+          }, { once: true });
+      }, 100);
+  }
+
+  // Delete session
+  async function deleteSession(sessionId) {
+      const deleteOption = document.getElementById('delete-session-option');
+      const originalHTML = deleteOption.innerHTML;
+      deleteOption.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Deleting...</span>';
+      deleteOption.style.pointerEvents = 'none';
+
+      try {
+          const response = await fetch(`/api/chat-sessions/${sessionId}`, {
+              method: 'DELETE'
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+              showNotification('Conversation deleted successfully', 'success');
+              await loadChatSessions();
+
+              if (currentSessionId == sessionId) {
+                  document.getElementById('messages-container').innerHTML = `
+                      <div class="message welcome-message">
+                          <div class="message-avatar">
+                              <i class="fas fa-heart"></i>
+                          </div>
+                          <div class="message-bubble">
+                              <p>Welcome to your AI message space! 💕</p>
+                              <p>Choose a message type below or type a custom request to generate a romantic message for your partner.</p>
+                              <small>${couple.boy_name} ❤️ ${couple.girl_name}</small>
+                          </div>
+                      </div>
+                  `;
+                  document.getElementById('current-session-title').textContent = 'Start a new conversation';
+                  currentSessionId = null;
+                  currentMessage = '';
+                  currentChatId = null;
+              }
+          } else {
+              showNotification(data.message || 'Failed to delete conversation', 'error');
+          }
+      } catch (error) {
+          console.error('Error deleting session:', error);
+          showNotification('Failed to delete conversation', 'error');
+      } finally {
+          deleteOption.innerHTML = originalHTML;
+          deleteOption.style.pointerEvents = '';
+      }
+  }
+
+  // Copy message
+  async function copyMessage() {
+      const messageElement = document.getElementById('ai-response');
+      if (!messageElement) {
+          showNotification('No message to copy', 'error');
+          return;
+      }
+
+      const messageText = messageElement.innerText || messageElement.textContent;
+
+      if (!messageText || messageText.includes('Welcome to your AI message space')) {
+          showNotification('Please generate a message first!', 'error');
+          return;
+      }
+
+      try {
+          await navigator.clipboard.writeText(messageText);
+
+          const copyBtn = document.getElementById('copy-message');
+          const originalHTML = copyBtn.innerHTML;
+          copyBtn.innerHTML = '<i class="fas fa-check"></i><span>Copied!</span>';
+          copyBtn.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
+          copyBtn.disabled = true;
+
+          setTimeout(() => {
+              copyBtn.innerHTML = originalHTML;
+              copyBtn.style.background = '';
+              copyBtn.disabled = false;
+          }, 2000);
+
+          showNotification('Message copied to clipboard!', 'success');
+      } catch (err) {
+          console.error('Failed to copy:', err);
+          showNotification('Failed to copy to clipboard', 'error');
+      }
+  }
+
+  // Share on WhatsApp
+  async function shareOnWhatsApp() {
+      const messageElement = document.getElementById('ai-response');
+      if (!messageElement) {
+          showNotification('No message to share', 'error');
+          return;
+      }
+
+      const messageText = messageElement.innerText || messageElement.textContent;
+
+      if (!messageText || messageText.includes('Welcome to your AI message space')) {
+          showNotification('Please generate a message first!', 'error');
+          return;
+      }
+
+      const shareBtn = document.getElementById('share-whatsapp');
+      const originalHTML = shareBtn.innerHTML;
+      shareBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Opening...</span>';
+      shareBtn.disabled = true;
+
+      try {
+          const response = await fetch('/api/get-partner-phone');
+          const data = await response.json();
+
+          if (data.success) {
+              const phone = data.phone.replace(/\D/g, '');
+
+              const senderName = userType === 'boy' ? couple.boy_name : couple.girl_name;
+              const fullMessage = messageText + '\n\n- Sent with ❤️ from ' + senderName + ' via ForeverUs';
+
+              const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(fullMessage)}`;
+
+              window.open(whatsappUrl, '_blank');
+
+              showNotification('Opening WhatsApp...', 'success');
+          } else {
+              showNotification('Could not get partner\'s phone number', 'error');
+          }
+      } catch (error) {
+          console.error('WhatsApp share error:', error);
+          showNotification('Failed to share on WhatsApp', 'error');
+      } finally {
+          shareBtn.innerHTML = originalHTML;
+          shareBtn.disabled = false;
+      }
+  }
+
+  // Search sessions with debounce
+  let searchTimeout;
+  const historySearch = document.getElementById('history-search');
+  if (historySearch) {
+      historySearch.addEventListener('input', (e) => {
+          clearTimeout(searchTimeout);
+          searchTimeout = setTimeout(() => {
+              const searchTerm = e.target.value.toLowerCase().trim();
+              const sessionItems = document.querySelectorAll('.history-item');
+
+              if (searchTerm === '') {
+                  sessionItems.forEach(item => {
+                      item.style.display = 'flex';
+                  });
+                  return;
+              }
+
+              sessionItems.forEach(item => {
+                  const title = item.querySelector('.history-item-title')?.textContent.toLowerCase() || '';
+                  const preview = item.querySelector('.history-item-preview')?.textContent.toLowerCase() || '';
+
+                  if (title.includes(searchTerm) || preview.includes(searchTerm)) {
+                      item.style.display = 'flex';
+                  } else {
+                      item.style.display = 'none';
+                  }
+              });
+          }, 300);
+      });
+  }
+
+  // Show notification function
+  function showNotification(message, type = 'info') {
+      const existingNotification = document.querySelector('.notification');
+      if (existingNotification) {
+          existingNotification.remove();
+      }
+
+      const notification = document.createElement('div');
+      notification.className = `notification ${type}`;
+
+      let icon = 'fa-info-circle';
+      if (type === 'error') icon = 'fa-exclamation-circle';
+      if (type === 'success') icon = 'fa-check-circle';
+
+      notification.innerHTML = `
+          <i class="fas ${icon}"></i>
+          <span>${message}</span>
+      `;
+
+      document.body.appendChild(notification);
+
+      setTimeout(() => {
+          notification.classList.add('show');
+      }, 10);
+
+      setTimeout(() => {
+          notification.classList.remove('show');
+          setTimeout(() => {
+              notification.remove();
+          }, 300);
+      }, 3000);
+  }
+
+  // Event Listeners
+  document.addEventListener('DOMContentLoaded', () => {
+      loadChatSessions();
+
+      // New session button
+      const newSessionBtn = document.getElementById('new-session-btn');
+      if (newSessionBtn) {
+          newSessionBtn.addEventListener('click', createNewSession);
+      }
+
+      // Quick type buttons
+      document.querySelectorAll('.quick-type-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+              const type = btn.dataset.type;
+              generateMessage(type);
+          });
+
+          btn.addEventListener('touchstart', (e) => {
+              e.preventDefault();
+              const type = btn.dataset.type;
+              generateMessage(type);
+          }, { passive: false });
+      });
+
+      // Send custom message
+      const sendBtn = document.getElementById('send-custom-message');
+      const customInput = document.getElementById('custom-message-input');
+
+      if (sendBtn && customInput) {
+          sendBtn.addEventListener('click', () => {
+              const customPrompt = customInput.value.trim();
+              generateMessage('custom', customPrompt);
+              if (customPrompt) {
+                  customInput.value = '';
+              }
+          });
+
+          customInput.addEventListener('keypress', (e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  sendBtn.click();
+              }
+          });
+      }
+
+      // Copy button
+      const copyBtn = document.getElementById('copy-message');
+      if (copyBtn) {
+          copyBtn.addEventListener('click', copyMessage);
+      }
+
+      // WhatsApp button
+      const shareBtn = document.getElementById('share-whatsapp');
+      if (shareBtn) {
+          shareBtn.addEventListener('click', shareOnWhatsApp);
+      }
+
+      // Refresh sessions
+      const refreshBtn = document.getElementById('refresh-sessions');
+      if (refreshBtn) {
+          refreshBtn.addEventListener('click', () => {
+              loadChatSessions();
+              showNotification('Conversations refreshed', 'success');
+          });
+      }
+
+      // Clear all sessions
+      const clearAllBtn = document.getElementById('clear-all-sessions');
+      const clearAllModal = document.getElementById('clear-all-modal');
+      const cancelClearAll = document.getElementById('cancel-clear-all');
+      const confirmClearAll = document.getElementById('confirm-clear-all');
+
+      if (clearAllBtn && clearAllModal) {
+          clearAllBtn.addEventListener('click', () => {
+              clearAllModal.style.display = 'flex';
+          });
+
+          if (cancelClearAll) {
+              cancelClearAll.addEventListener('click', () => {
+                  clearAllModal.style.display = 'none';
+              });
+          }
+
+          if (confirmClearAll) {
+              confirmClearAll.addEventListener('click', async () => {
+                  clearAllModal.style.display = 'none';
+
+                  const originalHTML = confirmClearAll.innerHTML;
+                  confirmClearAll.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Clearing...';
+                  confirmClearAll.disabled = true;
+
+                  try {
+                      const response = await fetch('/api/clear-all-sessions', {
+                          method: 'POST'
+                      });
+
+                      const data = await response.json();
+
+                      if (data.success) {
+                          showNotification('All conversations cleared', 'success');
+                          await loadChatSessions();
+
+                          document.getElementById('messages-container').innerHTML = `
+                              <div class="message welcome-message">
+                                  <div class="message-avatar">
+                                      <i class="fas fa-heart"></i>
+                                  </div>
+                                  <div class="message-bubble">
+                                      <p>Welcome to your AI message space! 💕</p>
+                                      <p>Choose a message type below or type a custom request to generate a romantic message for your partner.</p>
+                                      <small>${couple.boy_name} ❤️ ${couple.girl_name}</small>
+                                  </div>
+                              </div>
+                          `;
+                          document.getElementById('current-session-title').textContent = 'Start a new conversation';
+                          currentSessionId = null;
+                          currentMessage = '';
+                          currentChatId = null;
+
+                          if (isMobile()) {
+                              closeSidebarMenu();
+                          }
+                      }
+                  } catch (error) {
+                      console.error('Error clearing sessions:', error);
+                      showNotification('Failed to clear conversations', 'error');
+                  } finally {
+                      confirmClearAll.innerHTML = originalHTML;
+                      confirmClearAll.disabled = false;
+                  }
+              });
+          }
+      }
+
+      // Delete confirmation
+      const deleteOption = document.getElementById('delete-session-option');
+      const deleteModal = document.getElementById('delete-modal');
+      const cancelDelete = document.getElementById('cancel-delete');
+      const confirmDelete = document.getElementById('confirm-delete');
+
+      if (deleteOption && deleteModal) {
+          deleteOption.addEventListener('click', () => {
+              document.getElementById('chat-context-menu').style.display = 'none';
+              if (selectedSessionId) {
+                  deleteModal.style.display = 'flex';
+              }
+          });
+
+          if (cancelDelete) {
+              cancelDelete.addEventListener('click', () => {
+                  deleteModal.style.display = 'none';
+                  selectedSessionId = null;
+              });
+          }
+
+          if (confirmDelete) {
+              confirmDelete.addEventListener('click', () => {
+                  deleteModal.style.display = 'none';
+                  if (selectedSessionId) {
+                      deleteSession(selectedSessionId);
+                      selectedSessionId = null;
+                  }
+              });
+          }
+      }
+
+      // Handle online/offline status
+      window.addEventListener('online', () => {
+          showNotification('You are back online!', 'success');
+          loadChatSessions();
+      });
+
+      window.addEventListener('offline', () => {
+          showNotification('You are offline. Some features may be limited.', 'error');
+      });
+
+      // Keyboard shortcut for new chat (Ctrl+N or Cmd+N)
+      document.addEventListener('keydown', (e) => {
+          if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+              e.preventDefault();
+              createNewSession();
+          }
+      });
+  });
+</script>
+{% endblock %}

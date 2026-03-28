@@ -1,0 +1,1480 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="register-container glass-card">
+        <div class="logo-section">
+            <i class="fas fa-heart logo-icon"></i>
+            <h2 class="section-title">Start Your Love Journey</h2>
+            <p class="subtitle">Create your private couple space in just a few steps</p>
+        </div>
+
+        <!-- Error Message Container -->
+        <div id="error-container" class="error-container" style="display: none;">
+            <div class="error-content">
+                <i class="fas fa-exclamation-circle error-icon"></i>
+                <div class="error-text">
+                    <h4 id="error-title">Registration Failed</h4>
+                    <p id="error-message"></p>
+                </div>
+                <button class="error-close" onclick="hideError()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- Existing Account Card -->
+            <div id="existing-account-card" class="existing-account-card" style="display: none;">
+                <div class="existing-account-header">
+                    <i class="fas fa-heart-broken"></i>
+                    <h4>Account Already Exists!</h4>
+                </div>
+                <p class="existing-account-text">It looks like you've already created an account with these details. Here are your login credentials:</p>
+                
+                <div class="existing-ids-container">
+                    <div class="existing-id-box boy">
+                        <span class="id-label"><i class="fas fa-mars"></i> Boy's ID:</span>
+                        <span class="id-value" id="existing-boy-id"></span>
+                        <button class="copy-id-btn" onclick="copyId('existing-boy-id')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="existing-id-box girl">
+                        <span class="id-label"><i class="fas fa-venus"></i> Girl's ID:</span>
+                        <span class="id-value" id="existing-girl-id"></span>
+                        <button class="copy-id-btn" onclick="copyId('existing-girl-id')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="existing-account-actions">
+                    <p class="suggestion-text">Would you like to login instead?</p>
+                    <div class="action-buttons">
+                        <a href="/" class="btn-primary">
+                            <i class="fas fa-sign-in-alt"></i>
+                            Go to Login
+                        </a>
+                        <button onclick="hideExistingAccount()" class="btn-secondary">
+                            <i class="fas fa-pen"></i>
+                            Try Again
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <form id="register-form" class="register-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="boy-name">
+                        <i class="fas fa-mars"></i>
+                        Boy's Name
+                    </label>
+                    <input type="text" id="boy-name" name="boy_name" placeholder="Enter boy's full name" required>
+                    <small class="name-hint">📝 Will be used to generate your unique ID (e.g., John → FU-JOHN-B)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="girl-name">
+                        <i class="fas fa-venus"></i>
+                        Girl's Name
+                    </label>
+                    <input type="text" id="girl-name" name="girl_name" placeholder="Enter girl's full name" required>
+                    <small class="name-hint">📝 Will be used to generate your unique ID (e.g., Jane → FU-JANE-G)</small>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="boy-mobile">
+                        <i class="fas fa-phone"></i>
+                        Boy's Mobile
+                    </label>
+                    <input type="tel" id="boy-mobile" name="boy_mobile" placeholder="Enter 10-digit mobile number" pattern="[0-9]{10}" maxlength="10" required>
+                    <small class="field-hint">📱 10-digit mobile number</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="girl-mobile">
+                        <i class="fas fa-phone"></i>
+                        Girl's Mobile
+                    </label>
+                    <input type="tel" id="girl-mobile" name="girl_mobile" placeholder="Enter 10-digit mobile number" pattern="[0-9]{10}" maxlength="10" required>
+                    <small class="field-hint">📱 10-digit mobile number</small>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="boy-age">
+                        <i class="fas fa-calendar"></i>
+                        Boy's Age
+                    </label>
+                    <input type="number" id="boy-age" name="boy_age" min="18" max="120" step="1" placeholder="Enter age (18-120)" required>
+                    <small class="field-hint">🎂 Must be at least 18 years old</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="girl-age">
+                        <i class="fas fa-calendar"></i>
+                        Girl's Age
+                    </label>
+                    <input type="number" id="girl-age" name="girl_age" min="18" max="120" step="1" placeholder="Enter age (18-120)" required>
+                    <small class="field-hint">🎂 Must be at least 18 years old</small>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="anniversary-date">
+                    <i class="fas fa-heart"></i>
+                    Our Anniversary Date
+                </label>
+                <div class="date-input-wrapper">
+                    <input type="date" 
+                           id="anniversary-date" 
+                           name="anniversary_date" 
+                           class="glass-input" 
+                           required>
+                    <i class="fas fa-calendar-alt date-icon"></i>
+                </div>
+                <small class="date-hint">📅 Select your special day!</small>
+            </div>
+
+            <!-- ID Preview Section -->
+            <div class="id-preview-section" id="id-preview-section" style="display: none;">
+                <div class="id-preview-header">
+                    <i class="fas fa-id-card"></i>
+                    <h4>Your Unique IDs Preview</h4>
+                </div>
+                <div class="id-preview-container">
+                    <div class="id-preview-item boy-preview">
+                        <i class="fas fa-mars"></i>
+                        <span>Boy's ID:</span>
+                        <strong id="preview-boy-id">FU-NAME-B</strong>
+                        <small class="preview-note">Based on your name</small>
+                    </div>
+                    <div class="id-preview-item girl-preview">
+                        <i class="fas fa-venus"></i>
+                        <span>Girl's ID:</span>
+                        <strong id="preview-girl-id">FU-NAME-G</strong>
+                        <small class="preview-note">Based on your name</small>
+                    </div>
+                </div>
+                <small class="id-preview-note">
+                    <i class="fas fa-info-circle"></i>
+                    IDs are generated from your name: FU-{YourName}-{B/G}
+                </small>
+            </div>
+
+            <!-- Chat Password Field -->
+            <div class="form-group password-group">
+                <label for="chat-password">
+                    <i class="fas fa-lock"></i>
+                    Chat Password
+                </label>
+                <div class="password-input-wrapper">
+                    <input type="password" 
+                           id="chat-password" 
+                           name="chat_password" 
+                           class="glass-input password-input" 
+                           placeholder="Enter a password for your private chat"
+                           minlength="4"
+                           required>
+                    <button type="button" class="password-toggle-btn" id="toggle-password" title="Show/Hide Password">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                
+                <div class="password-strength-container">
+                    <div class="password-strength-bar" id="password-strength-bar">
+                        <div class="strength-fill" id="strength-fill"></div>
+                    </div>
+                    <span class="password-strength-text" id="password-strength-text">Enter password</span>
+                </div>
+                
+                <div class="password-requirements-header" id="toggle-requirements">
+                    <span class="requirements-title">
+                        <i class="fas fa-shield-alt"></i>
+                        Password Requirements
+                    </span>
+                    <span class="requirements-toggle">
+                        <i class="fas fa-chevron-down" id="requirements-chevron"></i>
+                    </span>
+                </div>
+                
+                <div class="password-requirements" id="password-requirements">
+                    <ul class="requirements-list">
+                        <li class="requirement-item" id="req-length">
+                            <i class="fas fa-circle"></i>
+                            <span>At least 4 characters long</span>
+                        </li>
+                        <li class="requirement-item" id="req-number">
+                            <i class="fas fa-circle"></i>
+                            <span>Contains at least one number (0-9)</span>
+                        </li>
+                        <li class="requirement-item" id="req-letter">
+                            <i class="fas fa-circle"></i>
+                            <span>Contains at least one letter (a-z)</span>
+                        </li>
+                        <li class="requirement-item" id="req-special">
+                            <i class="fas fa-circle"></i>
+                            <span>Contains at least one special character (!@#$%^&*)</span>
+                        </li>
+                        <li class="requirement-item" id="req-uppercase">
+                            <i class="fas fa-circle"></i>
+                            <span>Contains at least one uppercase letter (A-Z)</span>
+                        </li>
+                    </ul>
+                    <div class="password-example">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Example: Love@1234</span>
+                    </div>
+                </div>
+                
+                <small class="password-hint">🔒 This password will be required to access your private couple chat</small>
+            </div>
+
+            <button type="submit" class="btn-primary btn-block" id="register-btn">
+                <i class="fas fa-heart"></i>
+                Create Our Love Space
+            </button>
+        </form>
+
+        <div class="login-footer">
+            <p>Already have a Couple ID?</p>
+            <a href="/" class="love-link">
+                <i class="fas fa-heart"></i>
+                Back to Login
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Registration Success Modal -->
+<div id="success-modal" class="modal">
+    <div class="modal-content glass-card">
+        <i class="fas fa-heart modal-icon"></i>
+        <h3>Love Story Begins! ❤️</h3>
+        <p>Your private space is ready. Save these IDs to login:</p>
+        
+        <div class="ids-container">
+            <div class="id-box boy">
+                <div class="id-header">
+                    <i class="fas fa-mars"></i>
+                    <span class="id-label">Boy's ID:</span>
+                </div>
+                <div class="id-value-wrapper">
+                    <span class="id-value" id="boy-id"></span>
+                    <button class="copy-id-btn" onclick="copyId('boy-id')">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                <div class="id-explanation">
+                    <i class="fas fa-user"></i>
+                    <small>Based on your name: <span id="boy-id-explanation"></span></small>
+                </div>
+            </div>
+            
+            <div class="id-box girl">
+                <div class="id-header">
+                    <i class="fas fa-venus"></i>
+                    <span class="id-label">Girl's ID:</span>
+                </div>
+                <div class="id-value-wrapper">
+                    <span class="id-value" id="girl-id"></span>
+                    <button class="copy-id-btn" onclick="copyId('girl-id')">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                <div class="id-explanation">
+                    <i class="fas fa-user"></i>
+                    <small>Based on your name: <span id="girl-id-explanation"></span></small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="id-format-info">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <strong>ID Format:</strong> FU-{YourName}-{B/G}<br>
+                <small>Example: For "John" → FU-JOHN-B, For "Jane" → FU-JANE-G</small>
+            </div>
+        </div>
+        
+        <p class="warning">⚠️ Save these IDs! You'll need them to access your love space</p>
+        
+        <button onclick="window.location.href='/'" class="btn-primary">
+            <i class="fas fa-heart"></i>
+            Go to Login
+        </button>
+    </div>
+</div>
+
+<style>
+/* ID Preview Section Styles */
+.id-preview-section {
+    margin: 20px 0;
+    padding: 15px;
+    background: linear-gradient(135deg, rgba(255, 77, 109, 0.1), rgba(255, 138, 92, 0.1));
+    border-radius: 15px;
+    border: 1px solid rgba(255, 77, 109, 0.3);
+    animation: fadeIn 0.3s ease;
+}
+
+.id-preview-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    color: var(--primary);
+}
+
+.id-preview-header i {
+    font-size: 1.2rem;
+}
+
+.id-preview-header h4 {
+    font-size: 1rem;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.id-preview-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.id-preview-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    font-size: 0.9rem;
+    flex-wrap: wrap;
+}
+
+.id-preview-item i {
+    font-size: 1rem;
+    width: 20px;
+}
+
+.id-preview-item span {
+    color: var(--text-secondary);
+    min-width: 70px;
+}
+
+.id-preview-item strong {
+    font-family: 'Courier New', monospace;
+    font-size: 1rem;
+    color: var(--primary);
+    letter-spacing: 1px;
+    flex: 1;
+}
+
+.preview-note {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    opacity: 0.8;
+}
+
+.id-preview-note {
+    display: block;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: center;
+}
+
+.id-preview-note i {
+    margin-right: 5px;
+    color: var(--primary);
+}
+
+.name-hint, .field-hint {
+    display: block;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    margin-top: 5px;
+    opacity: 0.7;
+}
+
+/* ID Box Styles */
+.id-box {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
+    border: 1px solid var(--glass-border);
+    transition: all 0.3s ease;
+}
+
+.id-box.boy {
+    border-left: 4px solid #54a0ff;
+}
+
+.id-box.girl {
+    border-left: 4px solid #ff6b6b;
+}
+
+.id-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.id-header i {
+    font-size: 1rem;
+}
+
+.id-header .id-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.id-value-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.id-value {
+    font-family: 'Courier New', monospace;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--primary);
+    letter-spacing: 1px;
+    word-break: break-all;
+    flex: 1;
+}
+
+.id-explanation {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.id-explanation i {
+    font-size: 0.7rem;
+    color: var(--primary);
+}
+
+.id-format-info {
+    background: rgba(255, 77, 109, 0.1);
+    border-radius: 10px;
+    padding: 12px;
+    margin: 15px 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    border: 1px solid rgba(255, 77, 109, 0.2);
+}
+
+.id-format-info i {
+    color: var(--primary);
+    font-size: 1rem;
+    margin-top: 2px;
+}
+
+.id-format-info strong {
+    color: var(--primary);
+}
+
+.copy-id-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: var(--text-secondary);
+    width: 35px;
+    height: 35px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.copy-id-btn:hover {
+    background: var(--primary);
+    color: white;
+    transform: scale(1.05);
+}
+
+/* Password Group Styles */
+.password-group {
+    margin-bottom: 25px;
+}
+
+.password-input-wrapper {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.password-input {
+    width: 100%;
+    padding-right: 50px !important;
+    font-family: monospace;
+    letter-spacing: 2px;
+}
+
+.password-toggle-btn {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 2;
+}
+
+.password-toggle-btn:hover {
+    background: var(--primary);
+    color: white;
+    transform: translateY(-50%) scale(1.05);
+}
+
+/* Password Strength Indicator */
+.password-strength-container {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.password-strength-bar {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.strength-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+}
+
+.strength-fill.weak {
+    width: 20%;
+    background: #ff4757;
+}
+
+.strength-fill.fair {
+    width: 40%;
+    background: #ffa502;
+}
+
+.strength-fill.good {
+    width: 60%;
+    background: #ffd32a;
+}
+
+.strength-fill.strong {
+    width: 80%;
+    background: #4cd137;
+}
+
+.strength-fill.excellent {
+    width: 100%;
+    background: #00b894;
+}
+
+.password-strength-text {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    min-width: 80px;
+    text-align: right;
+}
+
+/* Password Requirements */
+.password-requirements-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.password-requirements-header:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.requirements-title {
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.requirements-title i {
+    color: var(--primary);
+}
+
+.requirements-toggle i {
+    color: var(--text-secondary);
+    transition: transform 0.3s ease;
+}
+
+.password-requirements {
+    margin-top: 15px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    border: 1px solid var(--glass-border);
+    display: block;
+    animation: slideDown 0.3s ease;
+}
+
+.password-requirements.hidden {
+    display: none;
+}
+
+.requirements-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 15px 0;
+}
+
+.requirement-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.requirement-item i {
+    font-size: 0.7rem;
+    transition: all 0.3s ease;
+}
+
+.requirement-item.valid i {
+    color: #4cd137;
+}
+
+.requirement-item.valid .fas.fa-circle::before {
+    content: "\f058";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+}
+
+.requirement-item.invalid i {
+    color: #ff4757;
+}
+
+.password-example {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: rgba(255, 77, 109, 0.1);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-family: monospace;
+}
+
+.password-example i {
+    color: #ffd32a;
+}
+
+.password-hint {
+    display: block;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    margin-top: 10px;
+    opacity: 0.8;
+}
+
+/* Error Container Styles */
+.error-container {
+    margin-bottom: 25px;
+    border-radius: 15px;
+    overflow: hidden;
+    animation: slideDown 0.3s ease;
+}
+
+.error-content {
+    background: rgba(255, 71, 87, 0.1);
+    border: 1px solid rgba(255, 71, 87, 0.3);
+    border-radius: 12px;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    position: relative;
+}
+
+.error-icon {
+    font-size: 24px;
+    color: #ff4757;
+}
+
+.error-text {
+    flex: 1;
+}
+
+.error-text h4 {
+    color: #ff4757;
+    margin-bottom: 5px;
+    font-size: 1.1rem;
+}
+
+.error-text p {
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+.error-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 5px;
+    transition: all 0.3s ease;
+}
+
+.error-close:hover {
+    color: #ff4757;
+    transform: scale(1.1);
+}
+
+/* Existing Account Card */
+.existing-account-card {
+    margin-top: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 15px;
+    padding: 25px;
+    animation: slideUp 0.3s ease;
+}
+
+.existing-account-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.existing-account-header i {
+    font-size: 28px;
+    color: #ffa502;
+}
+
+.existing-account-header h4 {
+    color: #ffa502;
+    font-size: 1.2rem;
+    margin: 0;
+}
+
+.existing-account-text {
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+}
+
+.existing-ids-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.existing-id-box {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.existing-id-box.boy {
+    border-left: 4px solid #54a0ff;
+}
+
+.existing-id-box.girl {
+    border-left: 4px solid #ff6b6b;
+}
+
+.existing-id-box .id-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    min-width: 80px;
+}
+
+.existing-id-box .id-value {
+    font-family: monospace;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary);
+    flex: 1;
+}
+
+.existing-account-actions {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.suggestion-text {
+    color: var(--text-secondary);
+    margin-bottom: 15px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    padding: 12px 25px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+/* Animations */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .id-preview-container {
+        flex-direction: column;
+    }
+    
+    .id-preview-item {
+        flex-wrap: wrap;
+    }
+    
+    .id-value-wrapper {
+        flex-wrap: wrap;
+    }
+    
+    .id-box {
+        padding: 12px;
+    }
+    
+    .id-value {
+        font-size: 1rem;
+    }
+    
+    .existing-id-box {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .btn-secondary, .btn-primary {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .form-row {
+        flex-direction: column;
+        gap: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .id-preview-item strong {
+        font-size: 0.85rem;
+    }
+    
+    .id-value {
+        font-size: 0.9rem;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const boyNameInput = document.getElementById('boy-name');
+    const girlNameInput = document.getElementById('girl-name');
+    const boyAgeInput = document.getElementById('boy-age');
+    const girlAgeInput = document.getElementById('girl-age');
+    const idPreviewSection = document.getElementById('id-preview-section');
+    const previewBoyId = document.getElementById('preview-boy-id');
+    const previewGirlId = document.getElementById('preview-girl-id');
+    
+    // Clean name function
+    function cleanNameForId(name) {
+        if (!name) return '';
+        let cleaned = name.replace(/[^a-zA-Z\s-]/g, '');
+        cleaned = cleaned.replace(/\s+/g, '-');
+        cleaned = cleaned.replace(/-+/g, '-');
+        cleaned = cleaned.replace(/^-+|-+$/g, '');
+        return cleaned.toUpperCase();
+    }
+    
+    // Update ID preview
+    function updateIdPreview() {
+        const boyName = boyNameInput.value.trim();
+        const girlName = girlNameInput.value.trim();
+        
+        if (boyName) {
+            const cleanBoy = cleanNameForId(boyName);
+            previewBoyId.textContent = `FU-${cleanBoy || 'NAME'}-B`;
+        } else {
+            previewBoyId.textContent = 'FU-NAME-B';
+        }
+        
+        if (girlName) {
+            const cleanGirl = cleanNameForId(girlName);
+            previewGirlId.textContent = `FU-${cleanGirl || 'NAME'}-G`;
+        } else {
+            previewGirlId.textContent = 'FU-NAME-G';
+        }
+        
+        if (boyName || girlName) {
+            idPreviewSection.style.display = 'block';
+        } else {
+            idPreviewSection.style.display = 'none';
+        }
+    }
+    
+    if (boyNameInput) {
+        boyNameInput.addEventListener('input', updateIdPreview);
+    }
+    if (girlNameInput) {
+        girlNameInput.addEventListener('input', updateIdPreview);
+    }
+    
+    // Age validation
+    function validateAge(ageInput) {
+        if (!ageInput) return true;
+        const value = ageInput.value.trim();
+        if (!value) return false;
+        const age = parseInt(value);
+        return !isNaN(age) && age >= 18 && age <= 120;
+    }
+    
+    function showFieldError(field, message) {
+        const formGroup = field.closest('.form-group');
+        let errorSpan = formGroup.querySelector('.field-error');
+        if (!errorSpan) {
+            errorSpan = document.createElement('small');
+            errorSpan.className = 'field-error';
+            errorSpan.style.color = '#ff4757';
+            errorSpan.style.display = 'block';
+            errorSpan.style.marginTop = '5px';
+            formGroup.appendChild(errorSpan);
+        }
+        errorSpan.textContent = message;
+        field.style.borderColor = '#ff4757';
+    }
+    
+    function clearFieldError(field) {
+        const formGroup = field.closest('.form-group');
+        const errorSpan = formGroup.querySelector('.field-error');
+        if (errorSpan) {
+            errorSpan.remove();
+        }
+        field.style.borderColor = '';
+    }
+    
+    // Add real-time age validation
+    if (boyAgeInput) {
+        boyAgeInput.addEventListener('input', function() {
+            if (!validateAge(this)) {
+                showFieldError(this, 'Age must be between 18 and 120');
+            } else {
+                clearFieldError(this);
+            }
+        });
+    }
+    
+    if (girlAgeInput) {
+        girlAgeInput.addEventListener('input', function() {
+            if (!validateAge(this)) {
+                showFieldError(this, 'Age must be between 18 and 120');
+            } else {
+                clearFieldError(this);
+            }
+        });
+    }
+    
+    // Password Toggle Functionality
+    const passwordInput = document.getElementById('chat-password');
+    const toggleBtn = document.getElementById('toggle-password');
+    const requirementsHeader = document.getElementById('toggle-requirements');
+    const requirementsDiv = document.getElementById('password-requirements');
+    const chevron = document.getElementById('requirements-chevron');
+    
+    const strengthFill = document.getElementById('strength-fill');
+    const strengthText = document.getElementById('password-strength-text');
+    
+    const reqLength = document.getElementById('req-length');
+    const reqNumber = document.getElementById('req-number');
+    const reqLetter = document.getElementById('req-letter');
+    const reqSpecial = document.getElementById('req-special');
+    const reqUppercase = document.getElementById('req-uppercase');
+    
+    if (toggleBtn && passwordInput) {
+        toggleBtn.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            
+            const icon = this.querySelector('i');
+            if (type === 'text') {
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    }
+    
+    if (requirementsHeader && requirementsDiv) {
+        requirementsHeader.addEventListener('click', function() {
+            requirementsDiv.classList.toggle('hidden');
+            if (chevron) {
+                chevron.style.transform = requirementsDiv.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+            }
+        });
+    }
+    
+    if (passwordInput) {
+        passwordInput.addEventListener('input', function() {
+            const password = this.value;
+            
+            const hasLength = password.length >= 4;
+            const hasNumber = /[0-9]/.test(password);
+            const hasLetter = /[a-zA-Z]/.test(password);
+            const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+            const hasUppercase = /[A-Z]/.test(password);
+            
+            function updateRequirement(element, isValid) {
+                if (!element) return;
+                const icon = element.querySelector('i');
+                if (isValid) {
+                    element.classList.add('valid');
+                    element.classList.remove('invalid');
+                    if (icon) {
+                        icon.classList.remove('fa-circle');
+                        icon.classList.add('fa-check-circle');
+                    }
+                } else {
+                    element.classList.remove('valid');
+                    element.classList.add('invalid');
+                    if (icon) {
+                        icon.classList.remove('fa-check-circle');
+                        icon.classList.add('fa-circle');
+                    }
+                }
+            }
+            
+            updateRequirement(reqLength, hasLength);
+            updateRequirement(reqNumber, hasNumber);
+            updateRequirement(reqLetter, hasLetter);
+            updateRequirement(reqSpecial, hasSpecial);
+            updateRequirement(reqUppercase, hasUppercase);
+            
+            let strength = 0;
+            if (hasLength) strength += 20;
+            if (hasNumber) strength += 20;
+            if (hasLetter) strength += 20;
+            if (hasSpecial) strength += 20;
+            if (hasUppercase) strength += 20;
+            
+            if (strengthFill && strengthText) {
+                strengthFill.style.width = strength + '%';
+                strengthFill.classList.remove('weak', 'fair', 'good', 'strong', 'excellent');
+                
+                if (strength < 20) {
+                    strengthFill.classList.add('weak');
+                    strengthText.textContent = 'Weak';
+                    strengthText.style.color = '#ff4757';
+                } else if (strength < 40) {
+                    strengthFill.classList.add('fair');
+                    strengthText.textContent = 'Fair';
+                    strengthText.style.color = '#ffa502';
+                } else if (strength < 60) {
+                    strengthFill.classList.add('good');
+                    strengthText.textContent = 'Good';
+                    strengthText.style.color = '#ffd32a';
+                } else if (strength < 80) {
+                    strengthFill.classList.add('strong');
+                    strengthText.textContent = 'Strong';
+                    strengthText.style.color = '#4cd137';
+                } else {
+                    strengthFill.classList.add('excellent');
+                    strengthText.textContent = 'Excellent';
+                    strengthText.style.color = '#00b894';
+                }
+            }
+        });
+    }
+    
+    // Form submission
+    const registerForm = document.getElementById('register-form');
+    const registerBtn = document.getElementById('register-btn');
+    
+    if (registerForm) {
+        registerForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Get all form values
+            const boyName = document.getElementById('boy-name').value.trim();
+            const girlName = document.getElementById('girl-name').value.trim();
+            const boyMobile = document.getElementById('boy-mobile').value.trim();
+            const girlMobile = document.getElementById('girl-mobile').value.trim();
+            const boyAge = document.getElementById('boy-age').value.trim();
+            const girlAge = document.getElementById('girl-age').value.trim();
+            const anniversaryDate = document.getElementById('anniversary-date').value;
+            const chatPassword = passwordInput ? passwordInput.value : '';
+            
+            // Validate all fields
+            let hasError = false;
+            
+            if (!boyName) {
+                showError('Please enter boy\'s name', 'Missing Information');
+                hasError = true;
+            } else if (!girlName) {
+                showError('Please enter girl\'s name', 'Missing Information');
+                hasError = true;
+            } else if (!boyMobile) {
+                showError('Please enter boy\'s mobile number', 'Missing Information');
+                hasError = true;
+            } else if (!girlMobile) {
+                showError('Please enter girl\'s mobile number', 'Missing Information');
+                hasError = true;
+            } else if (!boyAge) {
+                showError('Please enter boy\'s age', 'Missing Information');
+                hasError = true;
+            } else if (!girlAge) {
+                showError('Please enter girl\'s age', 'Missing Information');
+                hasError = true;
+            } else if (!anniversaryDate) {
+                showError('Please select your anniversary date', 'Missing Information');
+                hasError = true;
+            } else if (!chatPassword) {
+                showError('Please enter a chat password', 'Missing Information');
+                hasError = true;
+            }
+            
+            if (hasError) return;
+            
+            // Validate mobile numbers
+            if (!/^\d{10}$/.test(boyMobile)) {
+                showError('Boy\'s mobile number must be 10 digits', 'Invalid Mobile');
+                return;
+            }
+            if (!/^\d{10}$/.test(girlMobile)) {
+                showError('Girl\'s mobile number must be 10 digits', 'Invalid Mobile');
+                return;
+            }
+            
+            // Validate ages
+            const boyAgeNum = parseInt(boyAge);
+            const girlAgeNum = parseInt(girlAge);
+            
+            if (isNaN(boyAgeNum) || boyAgeNum < 18 || boyAgeNum > 120) {
+                showError('Boy\'s age must be between 18 and 120', 'Invalid Age');
+                return;
+            }
+            if (isNaN(girlAgeNum) || girlAgeNum < 18 || girlAgeNum > 120) {
+                showError('Girl\'s age must be between 18 and 120', 'Invalid Age');
+                return;
+            }
+            
+            // Validate password
+            if (chatPassword.length < 4) {
+                showError('Password must be at least 4 characters long', 'Invalid Password');
+                return;
+            }
+            
+            // Show loading state
+            if (registerBtn) {
+                registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+                registerBtn.disabled = true;
+            }
+            
+            try {
+                const formData = {
+                    boy_name: boyName,
+                    girl_name: girlName,
+                    boy_mobile: boyMobile,
+                    girl_mobile: girlMobile,
+                    boy_age: boyAgeNum,
+                    girl_age: girlAgeNum,
+                    anniversary_date: anniversaryDate,
+                    chat_password: chatPassword
+                };
+                
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Display generated IDs
+                    document.getElementById('boy-id').textContent = data.boy_id;
+                    document.getElementById('girl-id').textContent = data.girl_id;
+                    
+                    // Update ID explanations
+                    const cleanBoy = cleanNameForId(boyName);
+                    const cleanGirl = cleanNameForId(girlName);
+                    document.getElementById('boy-id-explanation').textContent = `${boyName} → ${cleanBoy || 'NAME'}`;
+                    document.getElementById('girl-id-explanation').textContent = `${girlName} → ${cleanGirl || 'NAME'}`;
+                    
+                    // Show success modal
+                    document.getElementById('success-modal').style.display = 'flex';
+                    
+                    // Reset form
+                    registerForm.reset();
+                    idPreviewSection.style.display = 'none';
+                    
+                    // Clear any password strength indicators
+                    if (strengthFill) strengthFill.style.width = '0%';
+                    if (strengthText) strengthText.textContent = 'Enter password';
+                } else {
+                    if (data.error === 'duplicate_entry' || data.error === 'duplicate_names') {
+                        showExistingAccount(data);
+                    } else if (data.error === 'duplicate_mobile') {
+                        showError(data.message, 'Duplicate Mobile');
+                    } else {
+                        showError(data.message || 'Registration failed. Please try again.', 'Registration Failed');
+                    }
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                showError('Network error. Please check your connection and try again.', 'Connection Error');
+            } finally {
+                if (registerBtn) {
+                    registerBtn.innerHTML = '<i class="fas fa-heart"></i> Create Our Love Space';
+                    registerBtn.disabled = false;
+                }
+            }
+        });
+    }
+    
+    // Global functions
+    window.hideError = function() {
+        const errorContainer = document.getElementById('error-container');
+        if (errorContainer) {
+            errorContainer.style.display = 'none';
+        }
+    };
+    
+    window.hideExistingAccount = function() {
+        const existingAccountCard = document.getElementById('existing-account-card');
+        const errorContent = document.querySelector('.error-content');
+        const errorContainer = document.getElementById('error-container');
+        
+        if (existingAccountCard) existingAccountCard.style.display = 'none';
+        if (errorContent) errorContent.style.display = 'flex';
+        if (errorContainer) errorContainer.style.display = 'none';
+    };
+    
+    window.copyId = function(elementId) {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+        
+        const text = element.textContent;
+        
+        navigator.clipboard.writeText(text).then(() => {
+            const copyBtn = element.parentElement.querySelector('.copy-id-btn');
+            
+            if (copyBtn) {
+                const originalHTML = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+                copyBtn.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
+                
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalHTML;
+                    copyBtn.style.background = '';
+                }, 2000);
+            }
+            
+            showToast('ID copied to clipboard!', 'success');
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+            showToast('Failed to copy ID', 'error');
+        });
+    };
+    
+    window.showExistingAccount = function(data) {
+        const errorContainer = document.getElementById('error-container');
+        const existingAccountCard = document.getElementById('existing-account-card');
+        const errorContent = document.querySelector('.error-content');
+        
+        if (!errorContainer || !existingAccountCard) return;
+        
+        const boyIdElement = document.getElementById('existing-boy-id');
+        const girlIdElement = document.getElementById('existing-girl-id');
+        
+        if (boyIdElement && data.existing_ids) {
+            boyIdElement.textContent = data.existing_ids.boy_id || '';
+        }
+        if (girlIdElement && data.existing_ids) {
+            girlIdElement.textContent = data.existing_ids.girl_id || '';
+        }
+        
+        errorContainer.style.display = 'block';
+        existingAccountCard.style.display = 'block';
+        
+        if (errorContent) {
+            errorContent.style.display = 'none';
+        }
+        
+        existingAccountCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    
+    window.showError = function(message, title = 'Registration Failed') {
+        const errorContainer = document.getElementById('error-container');
+        const errorTitle = document.getElementById('error-title');
+        const errorMessage = document.getElementById('error-message');
+        const existingAccountCard = document.getElementById('existing-account-card');
+        
+        if (!errorContainer || !errorTitle || !errorMessage) return;
+        
+        errorTitle.textContent = title;
+        errorMessage.textContent = message;
+        errorContainer.style.display = 'block';
+        
+        if (existingAccountCard) {
+            existingAccountCard.style.display = 'none';
+        }
+        
+        // Scroll to error
+        errorContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        // Auto hide after 5 seconds
+        setTimeout(() => {
+            if (errorContainer.style.display === 'block') {
+                errorContainer.style.display = 'none';
+            }
+        }, 5000);
+    };
+    
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `notification ${type}`;
+        toast.innerHTML = `
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+            <span>${message}</span>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 10);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+    
+    // Close modal when clicking outside
+    const successModal = document.getElementById('success-modal');
+    if (successModal) {
+        successModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+            }
+        });
+    }
+    
+    // Add keyboard support
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            if (successModal && successModal.style.display === 'flex') {
+                successModal.style.display = 'none';
+            }
+            const errorContainer = document.getElementById('error-container');
+            if (errorContainer && errorContainer.style.display === 'block') {
+                errorContainer.style.display = 'none';
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

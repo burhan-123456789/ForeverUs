@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="offline-container glass-card">
+        <i class="fas fa-heart offline-icon"></i>
+        <h2>You're Offline</h2>
+        <p>Don't worry, love never goes offline!</p>
+        <p>Please check your internet connection to continue.</p>
+        <button onclick="window.location.reload()" class="btn-primary">
+            <i class="fas fa-sync-alt"></i>
+            Try Again
+        </button>
+    </div>
+</div>
+{% endblock %}

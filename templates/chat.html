@@ -1,0 +1,504 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="chat-app-container">
+    <!-- Back to Dashboard Button -->
+    <button class="back-to-dashboard" onclick="window.location.href='/dashboard'" title="Back to Dashboard">
+        <i class="fas fa-arrow-left"></i>
+    </button>
+
+    <!-- Lock Screen Overlay (shown when chat is locked) -->
+    {% if not chat_unlocked %}
+    <div class="lock-screen-overlay" id="lock-screen">
+        <div class="lock-screen-content glass-card">
+            <i class="fas fa-lock lock-icon"></i>
+            <h2>Private Chat Locked 🔒</h2>
+            <p>Enter the password to access your private conversation with your partner.</p>
+            
+            <div class="password-input-container">
+                <input type="password" id="chat-password" class="glass-input" placeholder="Enter chat password" autocomplete="off">
+                <button class="unlock-btn" id="unlock-chat-btn">
+                    <i class="fas fa-unlock-alt"></i>
+                    <span>Unlock</span>
+                </button>
+            </div>
+            
+            <div class="password-error" id="password-error" style="display: none;">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>Incorrect password. Please try again.</span>
+            </div>
+            
+            <div class="lock-screen-footer">
+                <small>Your chat is end-to-end encrypted and private</small>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Main Chat Area for Couple Chat -->
+    <main class="chat-main-full" id="chat-main" {% if not chat_unlocked %}style="filter: blur(5px); pointer-events: none;"{% endif %}>
+        <!-- Chat Header -->
+        <div class="chat-header">
+            <div class="chat-header-info">
+                <h2>💑 Private Couple Chat</h2>
+                <p class="chat-subtitle" id="chat-subtitle">
+                    {% if user_type == 'boy' %}
+                        Chatting with {{ couple.girl_name }}
+                    {% else %}
+                        Chatting with {{ couple.boy_name }}
+                    {% endif %}
+                </p>
+                <!-- Online Status Indicator -->
+                <div class="partner-status">
+                    <span class="online-status-indicator offline" id="online-status-indicator"></span>
+                    <span class="online-status-text" id="online-status-text">Loading status...</span>
+                </div>
+            </div>
+            <div class="chat-header-actions">
+                <button class="icon-btn" id="refresh-chat" title="Refresh">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <button class="icon-btn" id="lock-chat-btn" title="Lock Chat">
+                    <i class="fas fa-lock"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Messages Container -->
+        <div class="messages-container" id="chat-messages">
+            <!-- Messages will be loaded here dynamically -->
+            <div class="loading-messages">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading conversation...</p>
+            </div>
+        </div>
+
+        <!-- Message Input Area -->
+        <div class="message-input-area">
+            <div class="input-wrapper">
+                <div class="custom-input-container">
+                    <input type="text" 
+                           id="chat-input" 
+                           class="glass-input" 
+                           placeholder="Type your message here..."
+                           autocomplete="off">
+                    <button class="send-btn" id="send-chat-message" title="Send">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+                
+                <div class="message-actions-bar">
+                    <small class="typing-status" id="typing-status"></small>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay" class="loading-overlay">
+    <div class="loading-content">
+        <i class="fas fa-heart beating-heart"></i>
+        <p>Sending message...</p>
+    </div>
+</div>
+
+<style>
+/* Lock Screen Styles */
+.lock-screen-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    animation: fadeIn 0.3s ease;
+}
+
+.lock-screen-content {
+    max-width: 400px;
+    width: 90%;
+    padding: 40px 30px;
+    text-align: center;
+    animation: slideUp 0.3s ease;
+}
+
+.lock-icon {
+    font-size: 60px;
+    color: var(--primary);
+    margin-bottom: 20px;
+    animation: pulse 2s infinite;
+}
+
+.lock-screen-content h2 {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+    color: var(--text-primary);
+}
+
+.lock-screen-content p {
+    color: var(--text-secondary);
+    margin-bottom: 25px;
+    font-size: 1rem;
+}
+
+.password-input-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.password-input-container .glass-input {
+    flex: 1;
+    padding: 15px;
+    font-size: 1rem;
+    letter-spacing: 2px;
+}
+
+.unlock-btn {
+    padding: 0 25px;
+    background: linear-gradient(135deg, var(--primary), var(--gradient-end));
+    border: none;
+    border-radius: 12px;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.unlock-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 77, 109, 0.3);
+}
+
+.unlock-btn:active {
+    transform: scale(0.98);
+}
+
+.password-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #ff4757;
+    margin-top: 10px;
+    font-size: 0.9rem;
+    animation: shake 0.3s ease;
+}
+
+.password-error i {
+    font-size: 1rem;
+}
+
+.lock-screen-footer {
+    margin-top: 25px;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    opacity: 0.7;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* Partner Status Styles */
+.partner-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 5px;
+}
+
+.online-status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+.online-status-indicator.online {
+    background-color: #4ade80;
+    box-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+    animation: pulse 2s infinite;
+}
+
+.online-status-indicator.offline {
+    background-color: #94a3b8;
+}
+
+.online-status-text {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    transition: color 0.3s ease;
+}
+
+/* Chat Message Styles */
+.message {
+    display: flex;
+    margin: 20px;
+    animation: messageSlide 0.2s ease;
+}
+
+.message.user-message {
+    justify-content: flex-end;
+}
+
+.message.partner-message {
+    justify-content: flex-start;
+}
+
+.message.user-message .message-bubble {
+    background: linear-gradient(135deg, var(--primary), var(--gradient-end));
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.message.partner-message .message-bubble {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-bottom-left-radius: 4px;
+}
+
+.message.user-message .message-avatar {
+    order: 2;
+    margin-left: 12px;
+    margin-right: 0;
+}
+
+.message.partner-message .message-avatar {
+    order: 1;
+    margin-right: 12px;
+    margin-left: 0;
+}
+
+.message.user-message .message-bubble {
+    order: 1;
+}
+
+.message.partner-message .message-bubble {
+    order: 2;
+}
+
+.message-avatar {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.message-bubble {
+    max-width: 70%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    position: relative;
+    word-wrap: break-word;
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+.message-sender {
+    font-weight: 600;
+}
+
+.message-content {
+    line-height: 1.5;
+    font-size: 0.95rem;
+}
+
+.message-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 5px;
+}
+
+.message-time {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    opacity: 0.7;
+}
+
+.message-seen-indicator {
+    font-size: 0.7rem;
+    display: inline-flex;
+    align-items: center;
+}
+
+.message-seen-indicator.delivered {
+    color: #94a3b8;
+}
+
+.message-seen-indicator.seen {
+    color: #4ade80;
+}
+
+.message-seen-indicator i {
+    font-size: 0.8rem;
+}
+
+/* Date Separator */
+.date-separator {
+    text-align: center;
+    margin: 20px 0;
+    position: relative;
+}
+
+.date-separator::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+    background: var(--glass-border);
+    z-index: 1;
+}
+
+.date-separator span {
+    background: var(--bg-primary);
+    padding: 0 15px;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    position: relative;
+    z-index: 2;
+    backdrop-filter: blur(5px);
+}
+
+/* Typing Status */
+.typing-status {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    opacity: 0.8;
+    font-style: italic;
+    transition: opacity 0.3s ease;
+}
+
+/* Loading Messages */
+.loading-messages {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-secondary);
+}
+
+.loading-messages i {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    color: var(--primary);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .lock-screen-content {
+        padding: 30px 20px;
+    }
+    
+    .lock-icon {
+        font-size: 50px;
+    }
+    
+    .lock-screen-content h2 {
+        font-size: 1.5rem;
+    }
+    
+    .password-input-container {
+        flex-direction: column;
+    }
+    
+    .unlock-btn {
+        padding: 15px;
+        justify-content: center;
+    }
+    
+    .message {
+        margin: 15px;
+    }
+    
+    .message-bubble {
+        max-width: 80%;
+    }
+    
+    .message-avatar {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .message-bubble {
+        max-width: 85%;
+        padding: 10px 12px;
+    }
+    
+    .message-header {
+        font-size: 0.8rem;
+    }
+    
+    .message-content {
+        font-size: 0.9rem;
+    }
+}
+
+/* Animations */
+@keyframes messageSlide {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+</style>
+
+<script src="/static/js/chat.js"></script>
+<script>
+// Pass session data to JavaScript
+window.CHAT_CONFIG = {
+    userType: "{{ user_type }}",
+    coupleId: {{ couple.id }},
+    boyName: "{{ couple.boy_name }}",
+    girlName: "{{ couple.girl_name }}",
+    isUnlocked: {{ 'true' if chat_unlocked else 'false' }},
+    userId: {{ user.id }}
+};
+</script>
+{% endblock %}

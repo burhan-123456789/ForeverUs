@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#ff4d6d">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/images/icons/icon-192x192.png">
+    <title>ForeverUs - Private Couple Space</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div id="particles-js"></div>
+    
+    <!-- Custom Install Prompt -->
+    <div id="install-prompt" class="install-prompt glass-card">
+        <div class="install-content">
+            <i class="fas fa-heart prompt-icon"></i>
+            <h3>Install ForeverUs ❤️</h3>
+            <p>Add ForeverUs to your device and enjoy your private love space anytime.</p>
+            <div class="install-buttons">
+                <button id="install-app" class="btn-primary">Install App</button>
+                <button id="maybe-later" class="btn-secondary">Maybe Later</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Bell -->
+    <div class="notification-bell-container" id="notification-bell-container">
+        <button class="notification-bell" id="notification-bell">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge" id="notification-badge">0</span>
+        </button>
+        
+        <!-- Notification Dropdown -->
+        <div class="notification-dropdown glass-card" id="notification-dropdown">
+            <div class="notification-header">
+                <h3>Notifications</h3>
+                <button class="mark-read-btn" id="mark-all-read" title="Mark all as read">
+                    <i class="fas fa-check-double"></i>
+                </button>
+            </div>
+            <div class="notification-list" id="notification-list">
+                <div class="notification-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading notifications...</p>
+                </div>
+            </div>
+            <div class="notification-footer">
+                <button class="clear-all-btn" id="clear-all-notifications">
+                    <i class="fas fa-trash-alt"></i> Clear All
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {% block content %}{% endblock %}
+
+    <!-- Add Particles.js library BEFORE your custom particles.js -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script src="/static/js/particles.js"></script>
+    <script src="/static/js/main.js"></script>
+    <script src="/static/js/notifications.js"></script>
+    
+    <!-- Register Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registered');
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
