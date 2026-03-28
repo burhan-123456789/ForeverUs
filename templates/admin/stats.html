@@ -1,0 +1,140 @@
+{% extends "admin/base_admin.html" %}
+
+{% block content %}
+<h1>Advanced Statistics</h1>
+
+<div class="search-bar">
+    <form method="GET" action="{{ url_for('admin_panel.stats') }}" style="display: flex; gap: 1rem; align-items: center;">
+        <label>Days:</label>
+        <select name="days" onchange="this.form.submit()">
+            <option value="7" {% if days == 7 %}selected{% endif %}>Last 7 days</option>
+            <option value="30" {% if days == 30 %}selected{% endif %}>Last 30 days</option>
+            <option value="90" {% if days == 90 %}selected{% endif %}>Last 90 days</option>
+            <option value="365" {% if days == 365 %}selected{% endif %}>Last year</option>
+        </select>
+    </form>
+</div>
+
+<div class="chart-container">
+    <div class="chart-title">Daily Registrations</div>
+    <canvas id="registrationsChart" class="chart-canvas"></canvas>
+</div>
+
+<div class="chart-container">
+    <div class="chart-title">Messages Over Time</div>
+    <canvas id="messagesChart" class="chart-canvas"></canvas>
+</div>
+
+<div class="chart-container">
+    <div class="chart-title">Top 10 Most Active Couples</div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Couple</th>
+                <th>Total Messages</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for couple in top_couples %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ couple.boy_name }} ❤️ {{ couple.girl_name }}</td>
+                <td>{{ couple.message_count }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="3" style="text-align: center;">No data available</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // Registration chart
+    const regCtx = document.getElementById('registrationsChart').getContext('2d');
+    const regData = {{ registrations|tojson }};
+    new Chart(regCtx, {
+        type: 'bar',
+        data: {
+            labels: regData.map(d => d.date),
+            datasets: [{
+                label: 'New Couples',
+                data: regData.map(d => d.count),
+                backgroundColor: 'rgba(255, 77, 109, 0.6)',
+                borderColor: '#ff4d6d',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    labels: { color: '#ffffff' }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                    ticks: { color: '#ffffff' }
+                },
+                x: {
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                    ticks: { color: '#ffffff', maxRotation: 45, minRotation: 45 }
+                }
+            }
+        }
+    });
+    
+    // Messages chart
+    const msgCtx = document.getElementById('messagesChart').getContext('2d');
+    const msgData = {{ messages_by_day|tojson }};
+    new Chart(msgCtx, {
+        type: 'line',
+        data: {
+            labels: msgData.map(d => d.date),
+            datasets: [
+                {
+                    label: 'AI Messages',
+                    data: msgData.map(d => d.ai_messages),
+                    borderColor: '#ff4d6d',
+                    backgroundColor: 'rgba(255, 77, 109, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Chat Messages',
+                    data: msgData.map(d => d.chat_messages),
+                    borderColor: '#6c5ce7',
+                    backgroundColor: 'rgba(108, 92, 231, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    labels: { color: '#ffffff' }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                    ticks: { color: '#ffffff' }
+                },
+                x: {
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                    ticks: { color: '#ffffff', maxRotation: 45, minRotation: 45 }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}       

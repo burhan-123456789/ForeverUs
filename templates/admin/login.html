@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="login-container glass-card">
+        <div class="logo-section">
+            <i class="fas fa-shield-alt logo-icon"></i>
+            <h2 class="app-title">Admin Portal</h2>
+            <p class="tagline">Secure access for administrators</p>
+        </div>
+
+        {% if error %}
+        <div class="error-message" style="background: rgba(255,71,87,0.2); padding: 12px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
+            <i class="fas fa-exclamation-circle"></i> {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('admin_panel.login') }}">
+            <div class="form-group">
+                <label for="username"><i class="fas fa-user"></i> Username</label>
+                <input type="text" id="username" name="username" class="glass-input" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password"><i class="fas fa-lock"></i> Password</label>
+                <input type="password" id="password" name="password" class="glass-input" required>
+            </div>
+            
+            <button type="submit" class="btn-primary btn-block">
+                <i class="fas fa-sign-in-alt"></i>
+                Login to Admin Panel
+            </button>
+        </form>
+        
+        <div class="login-footer" style="margin-top: 20px;">
+            <a href="/" class="love-link">
+                <i class="fas fa-heart"></i>
+                Back to User Login
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.error-message {
+    background: rgba(255, 71, 87, 0.1);
+    border: 1px solid rgba(255, 71, 87, 0.3);
+    color: #ff4757;
+}
+</style>
+{% endblock %}

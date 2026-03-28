@@ -1,0 +1,122 @@
+{% extends "admin/base_admin.html" %}
+
+{% block content %}
+<h1>Dashboard</h1>
+<p class="subtitle">Welcome to the ForeverUs Admin Panel</p>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-heart"></i></div>
+        <div class="stat-value">{{ stats.total_couples }}</div>
+        <div class="stat-label">Total Couples</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-robot"></i></div>
+        <div class="stat-value">{{ stats.total_messages }}</div>
+        <div class="stat-label">AI Generated Messages</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-comments"></i></div>
+        <div class="stat-value">{{ stats.total_chat_messages }}</div>
+        <div class="stat-label">Chat Messages</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-bell"></i></div>
+        <div class="stat-value">{{ stats.total_notifications }}</div>
+        <div class="stat-label">Notifications</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-calendar-plus"></i></div>
+        <div class="stat-value">{{ stats.recent_couples }}</div>
+        <div class="stat-label">New Couples (7 days)</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-users"></i></div>
+        <div class="stat-value">{{ stats.active_couples }}</div>
+        <div class="stat-label">Active Couples (30 days)</div>
+    </div>
+</div>
+
+<div class="chart-container">
+    <div class="chart-title">Daily Registrations (Last 7 Days)</div>
+    <canvas id="registrationsChart" class="chart-canvas"></canvas>
+</div>
+
+<div class="data-table-container">
+    <h2>Recent Registrations</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Boy's Name</th>
+                <th>Girl's Name</th>
+                <th>Boy ID</th>
+                <th>Girl ID</th>
+                <th>Registered</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for couple in recent_couples %}
+            <tr>
+                <td>{{ couple.id }}</td>
+                <td>{{ couple.boy_name }}</td>
+                <td>{{ couple.girl_name }}</td>
+                <td><code>{{ couple.boy_id }}</code></td>
+                <td><code>{{ couple.girl_id }}</code></td>
+                <td>{{ couple.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>
+                    <a href="{{ url_for('admin_panel.couple_detail', couple_id=couple.id) }}" class="btn-secondary btn-sm">
+                        <i class="fas fa-eye"></i> View
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    const ctx = document.getElementById('registrationsChart').getContext('2d');
+    const registrationsChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ stats.daily_registrations|map(attribute='date')|list|tojson }},
+            datasets: [{
+                label: 'New Couples',
+                data: {{ stats.daily_registrations|map(attribute='count')|list|tojson }},
+                backgroundColor: 'rgba(255, 77, 109, 0.2)',
+                borderColor: '#ff4d6d',
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    labels: { color: '#ffffff' }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                    ticks: { color: '#ffffff' }
+                },
+                x: {
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                    ticks: { color: '#ffffff' }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

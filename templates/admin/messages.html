@@ -1,0 +1,108 @@
+<!-- Add to messages.html to show both types of AI messages -->
+{% extends "admin/base_admin.html" %}
+
+{% block content %}
+<h1>AI Generated Messages</h1>
+
+<div class="search-bar">
+    <form method="GET" action="{{ url_for('admin_panel.messages') }}" style="display: flex; gap: 1rem; width: 100%; flex-wrap: wrap;">
+        <input type="text" name="search" placeholder="Search messages..." value="{{ search }}" style="flex: 1;">
+        <select name="type">
+            <option value="">All Types</option>
+            <option value="romantic" {% if message_type == 'romantic' %}selected{% endif %}>Romantic</option>
+            <option value="funny" {% if message_type == 'funny' %}selected{% endif %}>Funny</option>
+            <option value="missing" {% if message_type == 'missing' %}selected{% endif %}>Missing</option>
+            <option value="good_morning" {% if message_type == 'good_morning' %}selected{% endif %}>Good Morning</option>
+            <option value="good_night" {% if message_type == 'good_night' %}selected{% endif %}>Good Night</option>
+            <option value="appreciation" {% if message_type == 'appreciation' %}selected{% endif %}>Appreciation</option>
+            <option value="anniversary" {% if message_type == 'anniversary' %}selected{% endif %}>Anniversary</option>
+            <option value="sorry" {% if message_type == 'sorry' %}selected{% endif %}>Sorry</option>
+            <option value="custom" {% if message_type == 'custom' %}selected{% endif %}>Custom</option>
+        </select>
+        <button type="submit"><i class="fas fa-search"></i> Search</button>
+        {% if search or message_type %}
+        <a href="{{ url_for('admin_panel.messages') }}" class="btn-secondary">Clear</a>
+        {% endif %}
+    </form>
+</div>
+
+{% if old_messages %}
+<div class="alert alert-warning">
+    <strong>Note:</strong> Found {{ old_messages|length }} messages from the old system. These are being migrated to the new system.
+</div>
+{% endif %}
+
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Couple ID</th>
+            <th>Sender</th>
+            <th>Type</th>
+            <th>Message</th>
+            <th>Time</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for msg in messages.items %}
+        <tr>
+            <td>{{ msg.id }}</td>
+            <td>{{ msg.couple_id }}</td>
+            <td><span class="badge badge-{{ msg.sender_type }}">{{ msg.sender_name }}</span></td>
+            <td><span class="badge badge-info">{{ msg.message_type }}</span></td>
+            <td style="max-width: 400px; word-wrap: break-word;">{{ msg.message }}</td>
+            <td>{{ msg.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="6" style="text-align: center;">
+                {% if search or message_type %}
+                No AI messages found matching your search
+                {% else %}
+                No AI-generated messages found in the database
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        
+        {% if old_messages and not messages.items %}
+        <!-- Show old messages if no new messages -->
+        {% for msg in old_messages %}
+        <tr style="background-color: #fff3cd;">
+            <td>{{ msg.id }}</td>
+            <td>{{ msg.couple_id }}</td>
+            <td><span class="badge badge-{{ msg.sender_type }}">{{ msg.sender_name }}</span></td>
+            <td><span class="badge badge-warning">Legacy</span></td>
+            <td style="max-width: 400px; word-wrap: break-word;">
+                <strong>Message:</strong> {{ msg.message }}<br>
+                <strong>Response:</strong> {{ msg.response }}
+            </td>
+            <td>{{ msg.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+        </tr>
+        {% endfor %}
+        {% endif %}
+    </tbody>
+</table>
+
+<div class="pagination">
+    {% if messages.has_prev %}
+    <a href="{{ url_for('admin_panel.messages', page=messages.prev_num, search=search, type=message_type) }}">Previous</a>
+    {% endif %}
+    
+    {% for page_num in messages.iter_pages() %}
+        {% if page_num %}
+            {% if page_num == messages.page %}
+            <span class="active">{{ page_num }}</span>
+            {% else %}
+            <a href="{{ url_for('admin_panel.messages', page=page_num, search=search, type=message_type) }}">{{ page_num }}</a>
+            {% endif %}
+        {% else %}
+            <span>...</span>
+        {% endif %}
+    {% endfor %}
+    
+    {% if messages.has_next %}
+    <a href="{{ url_for('admin_panel.messages', page=messages.next_num, search=search, type=message_type) }}">Next</a>
+    {% endif %}
+</div>
+{% endblock %}

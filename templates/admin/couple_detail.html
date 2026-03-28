@@ -1,0 +1,144 @@
+{% extends "admin/base_admin.html" %}
+
+{% block content %}
+<div style="margin-bottom: 1rem;">
+    <a href="{{ url_for('admin_panel.couples') }}" class="btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Couples
+    </a>
+</div>
+
+<div class="stats-grid" style="margin-bottom: 2rem;">
+    <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-mars"></i></div>
+        <div class="stat-value">{{ couple.boy_name }}</div>
+        <div class="stat-label">Boy's Name</div>
+        <small style="color: var(--text-secondary);">ID: {{ couple.boy_id }}</small>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-venus"></i></div>
+        <div class="stat-value">{{ couple.girl_name }}</div>
+        <div class="stat-label">Girl's Name</div>
+        <small style="color: var(--text-secondary);">ID: {{ couple.girl_id }}</small>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-calendar-heart"></i></div>
+        <div class="stat-value">{{ couple.anniversary_date }}</div>
+        <div class="stat-label">Anniversary Date</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-phone"></i></div>
+        <div class="stat-value">{{ couple.boy_mobile }} / {{ couple.girl_mobile }}</div>
+        <div class="stat-label">Mobile Numbers</div>
+    </div>
+</div>
+
+<div class="chart-container">
+    <div class="chart-title">Couple Information</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div>
+            <h4>Boy's Age: {{ couple.boy_age }}</h4>
+            <h4>Girl's Age: {{ couple.girl_age }}</h4>
+            <h4>Registered: {{ couple.created_at.strftime('%Y-%m-%d %H:%M') }}</h4>
+        </div>
+        <div>
+            <button onclick="resetPassword()" class="btn-primary btn-sm">
+                <i class="fas fa-key"></i> Reset Chat Password
+            </button>
+            <button onclick="deleteCouple()" class="btn-danger btn-sm" style="margin-left: 10px;">
+                <i class="fas fa-trash"></i> Delete Couple
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="chart-container">
+    <div class="chart-title">AI Generated Messages (Last 50)</div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Sender</th>
+                <th>Type</th>
+                <th>Message</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for msg in ai_messages %}
+            <tr>
+                <td>{{ msg.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td><span class="badge badge-{{ msg.sender_type }}">{{ msg.sender_name }}</span></td>
+                <td>{{ msg.sender_type }}</td>
+                <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;">{{ msg.message[:100] }}...</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" style="text-align: center;">No AI messages yet</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="chart-container">
+    <div class="chart-title">Chat Sessions</div>
+    {% for session in chat_sessions %}
+    <div style="margin-bottom: 1rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 10px;">
+        <h4>{{ session.title }}</h4>
+        <small>Created: {{ session.created_at.strftime('%Y-%m-%d %H:%M') }}</small><br>
+        <small>Last updated: {{ session.updated_at.strftime('%Y-%m-%d %H:%M') }}</small>
+    </div>
+    {% else %}
+    <p>No chat sessions</p>
+    {% endfor %}
+</div>
+
+<script>
+function resetPassword() {
+    const newPassword = prompt('Enter new chat password (minimum 4 characters):');
+    if (newPassword && newPassword.length >= 4) {
+        fetch(`/admin-panel/couple/{{ couple.id }}/reset-password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ password: newPassword })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Password reset successfully');
+            } else {
+                showToast(data.error || 'Failed to reset password', 'error');
+            }
+        });
+    } else if (newPassword) {
+        showToast('Password must be at least 4 characters', 'error');
+    }
+}
+
+function deleteCouple() {
+    if (confirm('Are you sure you want to delete this couple? This action cannot be undone.')) {
+        fetch(`/admin-panel/couple/{{ couple.id }}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Couple deleted successfully');
+                setTimeout(() => {
+                    window.location.href = "{{ url_for('admin_panel.couples') }}";
+                }, 1000);
+            } else {
+                showToast(data.error || 'Failed to delete couple', 'error');
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

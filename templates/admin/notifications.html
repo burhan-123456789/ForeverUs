@@ -1,0 +1,164 @@
+{% extends "admin/base_admin.html" %}
+
+{% block content %}
+<h1>Notifications</h1>
+
+<div style="margin-bottom: 2rem;">
+    <button onclick="showSendNotificationModal()" class="btn-primary">
+        <i class="fas fa-bell"></i> Send Notification to All Users
+    </button>
+</div>
+
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Couple ID</th>
+            <th>User Type</th>
+            <th>Title</th>
+            <th>Message</th>
+            <th>Read</th>
+            <th>Created</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for notif in notifications.items %}
+        <tr>
+            <td>{{ notif.id }}</td>
+            <td>{{ notif.couple_id }}</td>
+            <td><span class="badge badge-{{ notif.user_type }}">{{ notif.user_type }}</span></td>
+            <td>{{ notif.title }}</td>
+            <td style="max-width: 300px;">{{ notif.message[:100] }}...</td>
+            <td>
+                {% if notif.is_read %}
+                <i class="fas fa-check-circle" style="color: #00b894;"></i>
+                {% else %}
+                <i class="fas fa-circle" style="color: #ff4757;"></i>
+                {% endif %}
+            </td>
+            <td>{{ notif.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="7" style="text-align: center;">No notifications found</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="pagination">
+    {% if notifications.has_prev %}
+    <a href="{{ url_for('admin_panel.notifications', page=notifications.prev_num) }}">Previous</a>
+    {% endif %}
+    
+    {% for page_num in notifications.iter_pages() %}
+        {% if page_num %}
+            {% if page_num == notifications.page %}
+            <span class="active">{{ page_num }}</span>
+            {% else %}
+            <a href="{{ url_for('admin_panel.notifications', page=page_num) }}">{{ page_num }}</a>
+            {% endif %}
+        {% else %}
+            <span>...</span>
+        {% endif %}
+    {% endfor %}
+    
+    {% if notifications.has_next %}
+    <a href="{{ url_for('admin_panel.notifications', page=notifications.next_num) }}">Next</a>
+    {% endif %}
+</div>
+
+<!-- Send Notification Modal -->
+<div id="send-notification-modal" class="modal">
+    <div class="modal-content">
+        <h3><i class="fas fa-bell"></i> Send Notification</h3>
+        <form id="send-notification-form">
+            <div class="form-group">
+                <label>User Type</label>
+                <select id="notification-user-type" class="glass-input">
+                    <option value="all">All Users</option>
+                    <option value="boy">Boys Only</option>
+                    <option value="girl">Girls Only</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Title</label>
+                <input type="text" id="notification-title" class="glass-input" placeholder="Enter title" required>
+            </div>
+            <div class="form-group">
+                <label>Message</label>
+                <textarea id="notification-message" class="glass-input" rows="4" placeholder="Enter message" required></textarea>
+            </div>
+            <div class="modal-buttons">
+                <button type="button" onclick="closeSendNotificationModal()" class="btn-secondary">Cancel</button>
+                <button type="submit" class="btn-primary">Send</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function showSendNotificationModal() {
+    document.getElementById('send-notification-modal').style.display = 'flex';
+}
+
+function closeSendNotificationModal() {
+    document.getElementById('send-notification-modal').style.display = 'none';
+}
+
+document.getElementById('send-notification-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const userType = document.getElementById('notification-user-type').value;
+    const title = document.getElementById('notification-title').value.trim();
+    const message = document.getElementById('notification-message').value.trim();
+    
+    if (!title || !message) {
+        showToast('Please fill in all fields', 'error');
+        return;
+    }
+    
+    const sendBtn = e.target.querySelector('button[type="submit"]');
+    const originalHTML = sendBtn.innerHTML;
+    sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+    sendBtn.disabled = true;
+    
+    try {
+        const response = await fetch('{{ url_for('admin_panel.send_notification') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                user_type: userType,
+                title: title,
+                message: message
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast(data.message, 'success');
+            closeSendNotificationModal();
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast(data.error || 'Failed to send notification', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Failed to send notification', 'error');
+    } finally {
+        sendBtn.innerHTML = originalHTML;
+        sendBtn.disabled = false;
+    }
+});
+
+// Close modal when clicking outside
+document.getElementById('send-notification-modal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('send-notification-modal')) {
+        closeSendNotificationModal();
+    }
+});
+</script>
+{% endblock %}

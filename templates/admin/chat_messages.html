@@ -1,0 +1,86 @@
+<!-- Add this to chat_messages.html for better debugging -->
+{% extends "admin/base_admin.html" %}
+
+{% block content %}
+<h1>Person-to-Person Chat Messages</h1>
+
+<!-- Add debug info -->
+<div class="alert alert-info" style="background: #e3f2fd; padding: 10px; margin-bottom: 20px; border-radius: 5px;">
+    <strong>Debug Info:</strong> Total messages in this page: {{ messages.items|length }}<br>
+    Total pages: {{ messages.pages }} | Current page: {{ messages.page }} | Total messages: {{ messages.total }}
+    {% if search %}
+    <br>Search term: "{{ search }}"
+    {% endif %}
+</div>
+
+<div class="search-bar">
+    <form method="GET" action="{{ url_for('admin_panel.chat_messages') }}" style="display: flex; gap: 1rem; width: 100%;">
+        <input type="text" name="search" placeholder="Search by message content, sender, or receiver..." value="{{ search }}" style="flex: 1;">
+        <button type="submit"><i class="fas fa-search"></i> Search</button>
+        {% if search %}
+        <a href="{{ url_for('admin_panel.chat_messages') }}" class="btn-secondary">Clear</a>
+        {% endif %}
+    </form>
+</div>
+
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Couple ID</th>
+            <th>Session</th>
+            <th>From</th>
+            <th>To</th>
+            <th>Message</th>
+            <th>Time</th>
+            <th>Type</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for msg in messages.items %}
+        <tr>
+            <td>{{ msg.id }}</td>
+            <td>{{ msg.couple_id }}</td>
+            <td>{{ msg.session_id }}</td>
+            <td><span class="badge badge-{{ msg.sender_type }}">{{ msg.sender_name }}</span></td>
+            <td>{{ msg.receiver_name }}</td>
+            <td style="max-width: 400px; word-wrap: break-word;">{{ msg.message }}</td>
+            <td>{{ msg.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td><span class="badge {% if msg.message_type == 'chat' %}badge-info{% else %}badge-secondary{% endif %}">{{ msg.message_type }}</span></td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="8" style="text-align: center;">
+                {% if search %}
+                No chat messages found matching "{{ search }}"
+                {% else %}
+                No person-to-person chat messages found in the database
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="pagination">
+    {% if messages.has_prev %}
+    <a href="{{ url_for('admin_panel.chat_messages', page=messages.prev_num, search=search) }}">Previous</a>
+    {% endif %}
+    
+    {% for page_num in messages.iter_pages() %}
+        {% if page_num %}
+            {% if page_num == messages.page %}
+            <span class="active">{{ page_num }}</span>
+            {% else %}
+            <a href="{{ url_for('admin_panel.chat_messages', page=page_num, search=search) }}">{{ page_num }}</a>
+            {% endif %}
+        {% else %}
+            <span>...</span>
+        {% endif %}
+    {% endfor %}
+    
+    {% if messages.has_next %}
+    <a href="{{ url_for('admin_panel.chat_messages', page=messages.next_num, search=search) }}">Next</a>
+    {% endif %}
+</div>
+{% endblock %}
